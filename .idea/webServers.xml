@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="b3d7da73-0466-4663-bed0-c463b98411e1" name="Nasu" url="http://www.emmaggi.com/nasuoouth">
+        <fileTransfer rootFolder="/home/emmaggic/public_html/nasuoouth" accessType="SFTP" host="ftp.emmaggi.com" port="22" sshConfigId="87399b0f-4aeb-4e85-94ab-20672ef3226d" sshConfig="emmaggi_nasuoouth">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" host="ftp.emmaggi.com" id="87399b0f-4aeb-4e85-94ab-20672ef3226d" port="22" customName="emmaggi_nasuoouth" nameFormat="CUSTOM" username="emmaggic" useOpenSSHConfig="true">
+        <option name="customName" value="emmaggi_nasuoouth" />
+      </sshConfig>
+      <sshConfig authType="PASSWORD" host="ftp.emmaggi.com" id="b969c80d-a660-447a-8ba0-08a2023abd94" port="22" nameFormat="DESCRIPTIVE" username="emmaggic" useOpenSSHConfig="true" />
+    </configs>
+  </component>
+</project>

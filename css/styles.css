@@ -1,0 +1,95 @@
+body, h2, h3, p {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+.profile-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.header {
+    background-color: #990000;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header
+
+-icons span {
+margin-left: 10px;
+display: flex;
+align-items: center;
+}
+
+.account-info {
+background-color: #CC0000;
+color: white;
+padding: 20px;
+}
+
+.balance h2, .account-details h3 {
+margin-top: 5px;
+}
+
+.account-details p, .balance p {
+font-size: 0.9rem;
+}
+
+.account-actions button {
+margin-top: 10px;
+background-color: white;
+border: none;
+padding: 10px 20px;
+display: flex;
+align-items: center;
+gap: 10px; /* Add space between icon and text */
+cursor: pointer;
+}
+
+.favorites {
+display: flex;
+justify-content: space-around;
+margin-top: 20px;
+}
+
+.favorites button {
+background-color: #333;
+color: white;
+border: none;
+padding: 10px 20px;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 10px; /* Add space between icon and text */
+}
+
+.insurance {
+background-color: black;
+color: white;
+padding: 20px;
+text-align: center;
+}
+
+.footer {
+display: flex;
+justify-content: space-around;
+margin-top: 20px;
+}
+
+.footer button {
+background-color: #990000;
+color: white;
+border: none;
+padding: 10px 20px;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 10px; /* Add space between icon and text */
+}
