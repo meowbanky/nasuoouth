@@ -7,6 +7,7 @@ if (!isset($_SESSION['UserID'])) {
 }
 
 require_once('class/DataBaseHandler.php');
+
 $dbHandler = new DataBaseHandler();
 //Nok relationionship
 

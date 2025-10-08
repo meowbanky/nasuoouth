@@ -1,10 +1,15 @@
 <?php
 session_start();
 require_once('class/DataBaseHandler.php');
+require_once('class/services/NotificationService.php');
 require_once('sendSmsNewMember.php');
+use class\services\NotificationService;
+
 
 // Assuming you've sanitized and validated your inputs
 $dbHandler = new DataBaseHandler();
+
+$notification = new NotificationService($dbHandler->pdo);
 
 $period = filter_input(INPUT_GET, 'period', FILTER_SANITIZE_NUMBER_INT);
 $staff_id = filter_input(INPUT_GET, 'staff_id', FILTER_SANITIZE_NUMBER_INT);
@@ -48,8 +53,10 @@ foreach ($activeMembers as $activeMember) {
 					    parent.document.getElementById("progress").innerHTML="<div style=\"width:' . $progressPercentage . ';background:linear-gradient(to bottom, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); text-align:center;color:white;height:35px;display:block;\">' . $progressPercentage . '</div>";
 					    </script>';
 
-    $mobilePhone = $activeMember['MobilePhone'];
-    $response = doSendMessage($mobilePhone, $message);
+//    $mobilePhone = $activeMember['MobilePhone'];
+//    $response = doSendMessage($mobilePhone, $message);
+
+    $notification->sendTransactionNotification($activeMember['staff_id'],$period);
     ob_flush();
     flush();
 

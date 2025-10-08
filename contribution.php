@@ -11,8 +11,8 @@ $dbHandler = new DataBaseHandler();
 
 $members = $dbHandler->getConcate3Column('tbl_personalinfo', 'Lname', 'Fname', 'Mname', 'namee', 'staff_id');
 
-
-
+// Get all periods for dropdown
+$periods = $dbHandler->getLimitedOrderedItem('tbpayrollperiods', 'Periodid', 'DESC', 100, 0);
 
 $itemsPerPage = 10; // Set the number of items you want per page
 $totalItems = $dbHandler->countItems('tbpayrollperiods'); // Get total items
@@ -21,8 +21,6 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1; // Get current page from 
 $page = max($page, 1); // Ensure the page is at least 1
 $page = min($page, $totalPages); // Ensure the page doesn't exceed the max
 $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
-
-//$periods = $dbHandler->getLimitedOrderedItem('tbpayrollperiods', 'Periodid', 'DESC', $itemsPerPage, $offset);
 
 ?>
 
@@ -57,25 +55,38 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
                 <?php if (isset($_SESSION['success_message'])) : ?>
-                    <div class="alert alert-success">
-                        <?= $_SESSION['success_message'];
+                <div class="alert alert-success">
+                    <?= $_SESSION['success_message'];
                         unset($_SESSION['success_message']); ?>
-                    </div>
+                </div>
                 <?php endif; ?>
 
                 <?php if (isset($_SESSION['error_message'])) : ?>
-                    <div class="alert alert-danger">
-                        <?= $_SESSION['error_message'];
+                <div class="alert alert-danger">
+                    <?= $_SESSION['error_message'];
                         unset($_SESSION['error_message']); ?>
-                    </div>
+                </div>
                 <?php endif; ?>
-                 <div class="card">
+                <div class="card">
                     <h5 class="card-header">Edit Contribution</h5>
                     <div class="card-body">
                         <form method="POST" id="loanForm" name="loanForm">
                             <!-- Form Fields -->
+                            <div class="form-group">
+                                <label for="period_id">Select Period:</label>
+                                <select name="period_id" id="period_id" class="form-control custom-select" required>
+                                    <option value="">Select Period...</option>
+                                    <?php foreach ($periods as $period) { ?>
+                                    <option value="<?php echo $period['Periodid']; ?>">
+                                        <?php echo $period['PayrollPeriod'] . ' (' . $period['PhysicalYear'] . ')'; ?>
+                                    </option>
+                                    <?php } ?>
+                                </select>
+                            </div>
+
                             <div class="search-box">
-                                <input type="text" name="search" id="search" class=" search-input" placeholder="Search..." autofocus>
+                                <input type="text" name="search" id="search" class=" search-input"
+                                    placeholder="Search..." autofocus>
                                 <i class="fas fa-search search-icon"></i>
                             </div>
 
@@ -95,7 +106,8 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
                                 <select name="selectName" id="selectName" class="form-control custom-select" size="10">
                                     <option value="">Select</option>
                                     <?php foreach ($members as $member) { ?>
-                                        <option value="<?php echo $member['staff_id']; ?>"><?php echo $member['namee']; ?></option>
+                                    <option value="<?php echo $member['staff_id']; ?>"><?php echo $member['namee']; ?>
+                                    </option>
                                     <?php } ?>
                                 </select>
                             </div>
@@ -120,180 +132,218 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
 
 
 <script>
-    $(document).ready(function() {
+$(document).ready(function() {
 
+    let staff_id = $("#staff_id").val();
+    let period_id = $("#period_id").val();
+
+    // Only fetch if both staff_id and period_id are set
+    if (staff_id && period_id) {
+        fetchContributionsDetails(staff_id, period_id);
+    }
+
+    $("#search").on('focus', function() {
+        $("#search").select();
+    })
+    $("#search").autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                url: "fetch_names.php",
+                type: "GET",
+                dataType: "json",
+                data: {
+                    term: request.term
+                },
+                success: function(data) {
+                    response(data);
+                }
+            });
+        },
+        minLength: 2, // Set minimum length of input to start showing suggestions
+        select: function(event, ui) {
+
+            $("#name").val(ui.item.label);
+            $("#staff_id").val(ui.item.value);
+
+            let period_id = $("#period_id").val();
+            if (period_id) {
+                fetchContributionsDetails(ui.item.value, period_id);
+            } else {
+                alert('Please select a period first');
+            }
+            return false;
+        }
+    });
+
+    // Add event listener for period change
+    $('#period_id').on('change', function() {
+        let period_id = $(this).val();
         let staff_id = $("#staff_id").val();
-        fetchContributionsDetails(staff_id);
 
-        $("#search").on('focus', function() {
-            $("#search").select();
-        })
-        $("#search").autocomplete({
-            source: function(request, response) {
-                $.ajax({
-                    url: "fetch_names.php",
-                    type: "GET",
-                    dataType: "json",
-                    data: {
-                        term: request.term
-                    },
-                    success: function(data) {
-                        response(data);
-                    }
+        if (staff_id && period_id) {
+            fetchContributionsDetails(staff_id, period_id);
+        }
+    });
+
+    function fetchContributionsDetails(staffId, periodId) {
+        if (!periodId) {
+            alert('Please select a period first');
+            return;
+        }
+
+        // Example AJAX call to fetch the loan balance
+        $('#overlay').fadeIn();
+        $.ajax({
+            url: 'getContributionsDetails.php', // Adjust this to your server-side script
+            data: {
+                staff_id: staffId,
+                period_id: periodId
+            },
+            //dataType: 'json',
+            success: function(response) {
+                $('#overlay').fadeOut('fast', function() {
+                    $('#ContributionsDetails').html(
+                    response); // Assuming response contains the loan balance
+
                 });
             },
-            minLength: 2, // Set minimum length of input to start showing suggestions
-            select: function(event, ui) {
+            error: function() {
+                $('#overlay').fadeOut('fast', function() {
+                    console.error('Failed to fetch Contribution Details');
+                })
 
-                $("#name").val(ui.item.label);
-                $("#staff_id").val(ui.item.value);
-                fetchContributionsDetails(ui.item.value)
-                return false;
+                // Handle errors here
             }
         });
+    }
 
-        function fetchContributionsDetails(staffId) {
-            // Example AJAX call to fetch the loan balance
-            $('#overlay').fadeIn();
+    function fetchLoanDetails(period) {
+        $.ajax({
+            url: 'getLoanDetails.php',
+            type: 'POST',
+            data: {
+                periodid: period
+            },
+            // dataType: 'json',
+            success: function(response) {
+                $('#loanDetails').html(response);
+
+            },
+            error: function(xhr, status, error) {
+                // console.error('Failed to fetch loan balance');
+                alert(error);
+            }
+        });
+    }
+
+
+    $('#selectName').on('change', function() {
+        var staff_id = $(this).val();
+        let period_id = $("#period_id").val();
+
+        if (period_id) {
+            fetchContributionsDetails(staff_id, period_id);
+        } else {
+            alert('Please select a period first');
+        }
+    });
+
+
+    $('#staff_id').on('change', function() {
+        var staff_id = $(this).val();
+        $.ajax({
+            url: 'getBalance.php', // Adjust the path to point to a PHP script where you use the fetchLoanBalance method
+            type: 'GET',
+            data: {
+                staff_id: staff_id
+            },
+            success: function(response) {
+                // Assuming `response` is the loan balance
+                $('#loan_balance').val(
+                response); // Update the loan balance input field with the fetched balance
+            },
+            error: function(xhr, status, error) {
+                console.log("Error fetching loan balance: " + error);
+            }
+        });
+    });
+
+
+
+
+    $('#loanForm').on('submit', async function(event) {
+        event.preventDefault(); // Prevent the form from submitting immediately
+
+        // Initially, no errors
+        let hasErrors = false;
+
+        // Clear previous error messages
+        $('.error-message').remove();
+        $('.form-control').removeClass('is-invalid');
+
+        // Check if period_id field is filled
+        if ($('#period_id').val().trim() === '') {
+            $('#period_id').addClass('is-invalid').after(
+                '<div class="error-message text-danger">Period is required.</div>');
+            hasErrors = true;
+        }
+        // Check if staff_id field is filled
+        if ($('#staff_id').val().trim() === '') {
+            $('#staff_id').addClass('is-invalid').after(
+                '<div class="error-message text-danger">Staff No is required.</div>');
+            hasErrors = true;
+        }
+
+        // Check if amountGranted field is filled
+        if ($('#amountGranted').val().trim() === '') {
+            $('#amountGranted').addClass('is-invalid').after(
+                '<div class="error-message text-danger">Amount Granted is required.</div>');
+            hasErrors = true;
+        }
+        // If any initial validation failed, stop here
+        if (hasErrors) {
+            $('html, body').animate({
+                scrollTop: $('.is-invalid').first().offset().top - 100
+            }, 200);
+            return; // Stop execution
+        }
+
+        // Show overlay
+        $('#overlay').fadeIn();
+
+        try {
+            var period_id = $("#period_id").val();
+            var formData = $(this).serialize(); // Serializes form data for Ajax
             $.ajax({
-                url: 'getContributionsDetails.php', // Adjust this to your server-side script
-                data: {
-                    staff_id: staffId
-                },
-                //dataType: 'json',
+                type: 'POST',
+                url: 'saveLoanRequest.php', // Adjust if necessary
+                data: formData,
                 success: function(response) {
-                    $('#overlay').fadeOut('fast', function() {
-                        $('#ContributionsDetails').html(response); // Assuming response contains the loan balance
-
-                    });
+                    // Handle success
+                    alert('Form submitted successfully.');
+                    $('#loanForm')[0].reset(); // Clear form
+                    fetchLoanDetails(period_id)
                 },
                 error: function() {
-                    $('#overlay').fadeOut('fast', function() {
-                        console.error('Failed to fetch Contribution Details');
-                    })
-
-                    // Handle errors here
+                    // Handle error
+                    alert('Form submission failed.');
+                },
+                complete: function() {
+                    // Always executed after the AJAX call completes
+                    $('#overlay').fadeOut();
                 }
             });
+        } catch (error) {
+            console.error('An error occurred:', error);
+            $('#overlay').fadeOut();
         }
-
-        function fetchLoanDetails(period) {
-            $.ajax({
-                url: 'getLoanDetails.php',
-                type: 'POST',
-                data: {
-                    periodid: period
-                },
-                // dataType: 'json',
-                success: function(response) {
-                    $('#loanDetails').html(response);
-
-                },
-                error: function(xhr, status, error) {
-                    // console.error('Failed to fetch loan balance');
-                    alert(error);
-                }
-            });
-        }
-
-
-        $('#selectName').on('change', function() {
-            var staff_id = $(this).val();
-            fetchContributionsDetails(staff_id);
-        });
-
-
-        $('#staff_id').on('change', function() {
-            var staff_id = $(this).val();
-            $.ajax({
-                url: 'getBalance.php', // Adjust the path to point to a PHP script where you use the fetchLoanBalance method
-                type: 'GET',
-                data: {
-                    staff_id: staff_id
-                },
-                success: function(response) {
-                    // Assuming `response` is the loan balance
-                    $('#loan_balance').val(response); // Update the loan balance input field with the fetched balance
-                },
-                error: function(xhr, status, error) {
-                    console.log("Error fetching loan balance: " + error);
-                }
-            });
-        });
-
-
-
-
-        $('#loanForm').on('submit', async function(event) {
-            event.preventDefault(); // Prevent the form from submitting immediately
-
-            // Initially, no errors
-            let hasErrors = false;
-
-            // Clear previous error messages
-            $('.error-message').remove();
-            $('.form-control').removeClass('is-invalid');
-
-            // Check if period field is filled
-            if ($('#period').val().trim() === '') {
-                $('#period').addClass('is-invalid').after('<div class="error-message text-danger">Period is required.</div>');
-                hasErrors = true;
-            }
-            // Check if period field is filled
-            if ($('#staff_id').val().trim() === '') {
-                $('#staff_id').addClass('is-invalid').after('<div class="error-message text-danger">Staff No is required.</div>');
-                hasErrors = true;
-            }
-
-            // Check if period field is filled
-            if ($('#amountGranted').val().trim() === '') {
-                $('#amountGranted').addClass('is-invalid').after('<div class="error-message text-danger">Amount Granted is required.</div>');
-                hasErrors = true;
-            }
-            // If any initial validation failed, stop here
-            if (hasErrors) {
-                $('html, body').animate({
-                    scrollTop: $('.is-invalid').first().offset().top - 100
-                }, 200);
-                return; // Stop execution
-            }
-
-            // Show overlay
-            $('#overlay').fadeIn();
-
-            try {
-                var period = $("#period").val();
-                var formData = $(this).serialize(); // Serializes form data for Ajax
-                $.ajax({
-                    type: 'POST',
-                    url: 'saveLoanRequest.php', // Adjust if necessary
-                    data: formData,
-                    success: function(response) {
-                        // Handle success
-                        alert('Form submitted successfully.');
-                        $('#loanForm')[0].reset(); // Clear form
-                        fetchLoanDetails(period)
-                    },
-                    error: function() {
-                        // Handle error
-                        alert('Form submission failed.');
-                    },
-                    complete: function() {
-                        // Always executed after the AJAX call completes
-                        $('#overlay').fadeOut();
-                    }
-                });
-            } catch (error) {
-                console.error('An error occurred:', error);
-                $('#overlay').fadeOut();
-            }
-        });
-
-
-
-
-
     });
+
+
+
+
+
+});
 </script>
 
 

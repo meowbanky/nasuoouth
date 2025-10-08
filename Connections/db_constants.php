@@ -1,5 +1,5 @@
 <?php
-require_once 'class/db_constants.php';
+require_once __DIR__ . '/../class/db_constants.php';
 $hostname = DB_HOST;
 $database = DB_NAME;
 $username = DB_USER;

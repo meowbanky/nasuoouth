@@ -4,7 +4,7 @@ require_once('db_constants.php');
 
 class DatabaseHandler
 {
-    private $pdo;
+    public $pdo;
     private $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -255,11 +255,26 @@ class DatabaseHandler
         return $result ? $result['total'] : 0;
     }
 
-    public function getContributionGrandTotal()
+    public function getContributionGrandTotal($period_id = null)
     {
-        $query = "SELECT (SUM(tbl_contributions.contribution) + SUM(tbl_contributions.loan) + SUM(tbl_contributions.special_savings)) AS total FROM tbl_contributions INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id WHERE `Status` = :status";
-        $stmt = $this->pdo->prepare($query);
-        $stmt->execute([':status' => 1]);
+        if ($period_id !== null && $period_id > 0) {
+            // Query with period_id filter
+            $query = "SELECT (SUM(tbl_contributions.contribution) + SUM(tbl_contributions.loan) + SUM(tbl_contributions.special_savings)) AS total 
+                     FROM tbl_contributions 
+                     INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id 
+                     WHERE `Status` = :status AND tbl_contributions.period_id = :period_id";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([':status' => 1, ':period_id' => $period_id]);
+        } else {
+            // Original query without period_id filter (for backward compatibility)
+            $query = "SELECT (SUM(tbl_contributions.contribution) + SUM(tbl_contributions.loan) + SUM(tbl_contributions.special_savings)) AS total 
+                     FROM tbl_contributions 
+                     INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id 
+                     WHERE `Status` = :status";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([':status' => 1]);
+        }
+        
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $result ? $result['total'] : 0;
@@ -305,37 +320,70 @@ class DatabaseHandler
 
 
 
-    public function upsertContribution($staff_id, $contributions, $loanRepayment, $specialSavings)
+    public function upsertContribution($staff_id, $contributions, $loanRepayment, $specialSavings, $period_id = null)
     {
         $contributions = str_replace(",", "", $contributions);
         $loanRepayment = str_replace(",", "", $loanRepayment);
         $specialSavings = str_replace(",", "", $specialSavings);
 
-        $queryCheck = "SELECT * FROM tbl_contributions WHERE staff_id = :staff_id";
-        $stmtCheck = $this->pdo->prepare($queryCheck);
-        $stmtCheck->execute([':staff_id' => $staff_id]);
-        $rowCheck = $stmtCheck->fetch();
+        if ($period_id !== null && $period_id > 0) {
+            // Check with both staff_id and period_id
+            $queryCheck = "SELECT * FROM tbl_contributions WHERE staff_id = :staff_id AND period_id = :period_id";
+            $stmtCheck = $this->pdo->prepare($queryCheck);
+            $stmtCheck->execute([':staff_id' => $staff_id, ':period_id' => $period_id]);
+            $rowCheck = $stmtCheck->fetch();
 
-        if (!$rowCheck) {
-            // Insert
-            $insertSQL = "INSERT INTO tbl_contributions (contribution, loan, staff_id, special_savings) VALUES (:contributions, :loanRepayment, :staff_id, :specialSavings)";
-            $stmtInsert = $this->pdo->prepare($insertSQL);
-            $stmtInsert->execute([
-                ':contributions' => $contributions,
-                ':loanRepayment' => $loanRepayment,
-                ':staff_id' => $staff_id,
-                ':specialSavings' => $specialSavings
-            ]);
+            if (!$rowCheck) {
+                // Insert with period_id
+                $insertSQL = "INSERT INTO tbl_contributions (contribution, loan, staff_id, special_savings, period_id) VALUES (:contributions, :loanRepayment, :staff_id, :specialSavings, :period_id)";
+                $stmtInsert = $this->pdo->prepare($insertSQL);
+                $stmtInsert->execute([
+                    ':contributions' => $contributions,
+                    ':loanRepayment' => $loanRepayment,
+                    ':staff_id' => $staff_id,
+                    ':specialSavings' => $specialSavings,
+                    ':period_id' => $period_id
+                ]);
+            } else {
+                // Update with period_id filter
+                $updateSQL = "UPDATE tbl_contributions SET contribution = :contributions, loan = :loanRepayment, special_savings = :specialSavings WHERE staff_id = :staff_id AND period_id = :period_id";
+                $stmtUpdate = $this->pdo->prepare($updateSQL);
+                $stmtUpdate->execute([
+                    ':contributions' => $contributions,
+                    ':loanRepayment' => $loanRepayment,
+                    ':specialSavings' => $specialSavings,
+                    ':staff_id' => $staff_id,
+                    ':period_id' => $period_id
+                ]);
+            }
         } else {
-            // Update
-            $updateSQL = "UPDATE tbl_contributions SET contribution = :contributions, loan = :loanRepayment, special_savings = :specialSavings WHERE staff_id = :staff_id";
-            $stmtUpdate = $this->pdo->prepare($updateSQL);
-            $stmtUpdate->execute([
-                ':contributions' => $contributions,
-                ':loanRepayment' => $loanRepayment,
-                ':specialSavings' => $specialSavings,
-                ':staff_id' => $staff_id
-            ]);
+            // Original logic without period_id (for backward compatibility)
+            $queryCheck = "SELECT * FROM tbl_contributions WHERE staff_id = :staff_id";
+            $stmtCheck = $this->pdo->prepare($queryCheck);
+            $stmtCheck->execute([':staff_id' => $staff_id]);
+            $rowCheck = $stmtCheck->fetch();
+
+            if (!$rowCheck) {
+                // Insert
+                $insertSQL = "INSERT INTO tbl_contributions (contribution, loan, staff_id, special_savings) VALUES (:contributions, :loanRepayment, :staff_id, :specialSavings)";
+                $stmtInsert = $this->pdo->prepare($insertSQL);
+                $stmtInsert->execute([
+                    ':contributions' => $contributions,
+                    ':loanRepayment' => $loanRepayment,
+                    ':staff_id' => $staff_id,
+                    ':specialSavings' => $specialSavings
+                ]);
+            } else {
+                // Update
+                $updateSQL = "UPDATE tbl_contributions SET contribution = :contributions, loan = :loanRepayment, special_savings = :specialSavings WHERE staff_id = :staff_id";
+                $stmtUpdate = $this->pdo->prepare($updateSQL);
+                $stmtUpdate->execute([
+                    ':contributions' => $contributions,
+                    ':loanRepayment' => $loanRepayment,
+                    ':specialSavings' => $specialSavings,
+                    ':staff_id' => $staff_id
+                ]);
+            }
         }
     }
     public function setting($table, $column)
@@ -406,7 +454,7 @@ class DatabaseHandler
     public function getStatus($staff_id, $period)
     {
         try {
-            $sql = "SELECT sum(tlb_mastertransaction.Contribution) as Contribution, (sum(tlb_mastertransaction.loanAmount)+ sum(tlb_mastertransaction.interest)) as Loan, ((sum(tlb_mastertransaction.loanAmount)+ sum(tlb_mastertransaction.interest))- sum(tlb_mastertransaction.loanRepayment)) as Loanbalance, sum(tlb_mastertransaction.withdrawal) as withdrawal FROM tlb_mastertransaction 
+            $sql = "SELECT sum(tlb_mastertransaction.Contribution) as Contribution, (sum(tlb_mastertransaction.loanAmount)+sum(tlb_mastertransaction.interest)) as Loan, ((sum(tlb_mastertransaction.loanAmount)+ sum(tlb_mastertransaction.interest))- sum(tlb_mastertransaction.loanRepayment)) as Loanbalance, sum(tlb_mastertransaction.withdrawal) as withdrawal FROM tlb_mastertransaction 
                     where staff_id = :staff_id AND tlb_mastertransaction.periodid <= :periodid GROUP BY staff_id";
             $stmt = $this->pdo->prepare($sql);
             $stmt->bindParam(':staff_id', $staff_id, PDO::PARAM_INT);

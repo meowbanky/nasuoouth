@@ -1,6 +1,13 @@
 <?php
+//require_once('services/NotificationService.php');
+require_once __DIR__ .'/services/NotificationService.php';
+require_once __DIR__ .'/DataBaseHandler.php';
 
-require_once('db_constants.php'); // Include the DatabaseHandler class
+use class\services\NotificationService;
+
+require_once __DIR__. '/db_constants.php' ; // Include the DatabaseHandler class
+
+
 if (isset($_GET['PeriodID'])) {
 
     $PeriodID = filter_input(INPUT_GET, 'PeriodID', FILTER_SANITIZE_NUMBER_INT);
@@ -18,6 +25,9 @@ if (isset($_GET['PeriodID'])) {
     } catch (\PDOException $e) {
         throw new \PDOException($e->getMessage(), (int)$e->getCode());
     }
+
+    $dbHandler = new DataBaseHandler();
+    $notification = new NotificationService($dbHandler->pdo);
 ?>
     <div id="progress" style="border:1px solid #ccc; border-radius: 5px;"></div>
     <div id="information" style="width:100%"></div>
@@ -158,6 +168,7 @@ if (isset($_GET['PeriodID'])) {
                 }
             }
 
+            $notification->sendTransactionNotification($deduction['staff_id'],$PeriodID);
             $processedTransactions++;
 
             // Calculate progress percentage

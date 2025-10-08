@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         }
 
                         #Save the data to database
-                        $dbHandler->upsertContribution($staff_id, $defaultCont, $loanRepayment, $special_savings);
+                        $dbHandler->upsertContribution($staff_id, $defaultCont, $loanRepayment, $special_savings, null);
                         array_push($founds, $row[1]);
                     } else {
                         array_push($newMembers, $row[2] . '-' . $row[1]);
