@@ -80,7 +80,8 @@ foreach ($previousYears as $previousYear) {
         <div class="row flex-nowrap">
 
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <div
+                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <h1 class="h2">Dashboard</h1>
                 </div>
 
@@ -127,7 +128,8 @@ foreach ($previousYears as $previousYear) {
                                 <h5 class="card-title">
                                     <symbol id="bx--male" viewBox="0 0 24 24">
                                         <circle cx="12" cy="4" r="2" fill="currentColor" />
-                                        <path fill="currentColor" d="M15 7H9a1 1 0 0 0-1 1v7h2v7h4v-7h2V8a1 1 0 0 0-1-1" />
+                                        <path fill="currentColor"
+                                            d="M15 7H9a1 1 0 0 0-1 1v7h2v7h4v-7h2V8a1 1 0 0 0-1-1" />
                                     </symbol><i class='bx bx-male nav_icon'></i>
                                 </h5>
                                 <p class="card-text"><?= $maleCount ?></p>
@@ -170,51 +172,51 @@ foreach ($previousYears as $previousYear) {
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    let ctx = document.getElementById('contributionChartCur').getContext('2d');
-    let contributionChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode($labels_curr); ?>, // Replace these with your actual data labels
-            datasets: [{
-                label: 'Monthly Contributions',
-                data: <?php echo json_encode($data_curr); ?>, // Replace these with your actual data points
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+const ctxCur = document.getElementById('contributionChartCur').getContext('2d');
+const contributionChartCur = new Chart(ctxCur, {
+    type: 'line',
+    data: {
+        labels: <?php echo json_encode($labels_curr); ?>, // Replace these with your actual data labels
+        datasets: [{
+            label: 'Monthly Contributions',
+            data: <?php echo json_encode($data_curr); ?>, // Replace these with your actual data points
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
             }
         }
-    });
+    }
+});
 </script>
 
 <script>
-    var ctx = document.getElementById('contributionChartPre').getContext('2d');
-    var contributionChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode($labels_pre); ?>, // Replace these with your actual data labels
-            datasets: [{
-                label: 'Monthly Contributions',
-                data: <?php echo json_encode($data_pre); ?>, // Replace these with your actual data points
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+const ctxPre = document.getElementById('contributionChartPre').getContext('2d');
+const contributionChartPre = new Chart(ctxPre, {
+    type: 'line',
+    data: {
+        labels: <?php echo json_encode($labels_pre); ?>, // Replace these with your actual data labels
+        datasets: [{
+            label: 'Monthly Contributions',
+            data: <?php echo json_encode($data_pre); ?>, // Replace these with your actual data points
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
             }
         }
-    });
+    }
+});
 </script>
 <?php include("includes/nav_script.php"); ?>
 
