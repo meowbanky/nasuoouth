@@ -41,6 +41,38 @@ require_once('classes/OOUTHSalaryAPIClient.php');
 
 <body class="bg-gray-100">
 
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="text-center">
+                <!-- Spinner -->
+                <div class="inline-flex items-center justify-center w-20 h-20 mb-6">
+                    <div class="animate-spin rounded-full h-20 w-20 border-b-4 border-indigo-600"></div>
+                </div>
+                
+                <!-- Status Text -->
+                <h3 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-2">Uploading Data</h3>
+                <p id="modalMessage" class="text-gray-600 mb-6">Please wait while we process your data...</p>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                    <div id="modalProgressBar" class="bg-indigo-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                
+                <!-- Progress Percentage -->
+                <div class="flex justify-between text-sm text-gray-600">
+                    <span id="modalProgressText">Preparing upload...</span>
+                    <span id="modalProgressPercent" class="font-semibold">0%</span>
+                </div>
+                
+                <!-- Record Counter -->
+                <div id="recordCounter" class="mt-4 text-sm text-gray-500 hidden">
+                    Processing: <span id="processedCount" class="font-semibold text-indigo-600">0</span> / <span id="totalCount" class="font-semibold">0</span> records
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto p-6">
         <!-- Page Header -->
         <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg p-6 mb-8 text-white">
@@ -286,6 +318,44 @@ require_once('classes/OOUTHSalaryAPIClient.php');
             opacity: 1;
             transform: translateY(0);
         }
+    }
+
+    /* Loading Modal Animations */
+    #loadingModal {
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    #loadingModal:not(.hidden) {
+        animation: modalFadeIn 0.3s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    #loadingModal > div {
+        animation: modalSlideUp 0.4s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+        from {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Prevent body scroll when modal is open */
+    body.modal-open {
+        overflow: hidden;
     }
     </style>
 
@@ -573,6 +643,40 @@ require_once('classes/OOUTHSalaryAPIClient.php');
         displayData();
     }
 
+    // Show loading modal
+    function showLoadingModal() {
+        const modal = document.getElementById('loadingModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.classList.add('modal-open');
+        // Reset progress
+        updateModalProgress(0, 'Preparing upload...');
+        document.getElementById('recordCounter').classList.add('hidden');
+    }
+
+    // Hide loading modal
+    function hideLoadingModal() {
+        const modal = document.getElementById('loadingModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.classList.remove('modal-open');
+    }
+
+    // Update modal progress
+    function updateModalProgress(percent, message) {
+        document.getElementById('modalProgressBar').style.width = percent + '%';
+        document.getElementById('modalProgressPercent').textContent = percent + '%';
+        document.getElementById('modalProgressText').textContent = message;
+    }
+
+    // Update record counter
+    function updateRecordCounter(processed, total) {
+        const counter = document.getElementById('recordCounter');
+        counter.classList.remove('hidden');
+        document.getElementById('processedCount').textContent = processed;
+        document.getElementById('totalCount').textContent = total;
+    }
+
     // Upload data to database
     async function uploadData() {
         if (apiData.length === 0) {
@@ -598,11 +702,18 @@ require_once('classes/OOUTHSalaryAPIClient.php');
 
         if (!result.isConfirmed) return;
 
-        // Show progress
-        document.getElementById('uploadProgress').classList.remove('hidden');
+        // Show loading modal
+        showLoadingModal();
         document.getElementById('uploadDataBtn').disabled = true;
 
         try {
+            // Simulate progress stages
+            updateModalProgress(10, 'Connecting to server...');
+            updateRecordCounter(0, apiData.length);
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+            updateModalProgress(25, 'Sending data...');
+            
             const response = await fetch('api/upload_json_data.php', {
                 method: 'POST',
                 headers: {
@@ -620,12 +731,21 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                 })
             });
 
-            const result = await response.json();
+            updateModalProgress(75, 'Processing records...');
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-            // Update progress
-            document.getElementById('uploadProgressBar').style.width = '100%';
-            document.getElementById('uploadPercent').textContent = '100%';
-            document.getElementById('uploadText').textContent = 'Upload completed!';
+            const uploadResult = await response.json();
+
+            // Update to completion
+            updateModalProgress(100, 'Upload completed!');
+            if (uploadResult.success && uploadResult.data) {
+                updateRecordCounter(uploadResult.data.success, uploadResult.data.total);
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            // Hide modal
+            hideLoadingModal();
 
             // Show results
             setTimeout(() => {
@@ -634,17 +754,16 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                 const resultsDiv = document.getElementById('uploadResults');
                 resultsDiv.classList.remove('hidden');
 
-                if (result.success) {
+                if (uploadResult.success) {
                     let notFoundHTML = '';
 
                     // Display not found staff if any
-                    if (result.data && result.data.not_found_list && result.data.not_found_list.length >
-                        0) {
+                    if (uploadResult.data && uploadResult.data.not_found_list && uploadResult.data.not_found_list.length > 0) {
                         notFoundHTML = `
                         <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                             <p class="text-yellow-800 font-semibold mb-2">
                                 <i class="fas fa-exclamation-triangle mr-2"></i>
-                                ${result.data.not_found_count} Staff Not Found in Database
+                                ${uploadResult.data.not_found_count} Staff Not Found in Database
                             </p>
                             <div class="max-h-40 overflow-y-auto">
                                 <table class="w-full text-sm">
@@ -656,7 +775,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                                         </tr>
                                     </thead>
                                     <tbody class="text-yellow-900">
-                                        ${result.data.not_found_list.map(staff => `
+                                        ${uploadResult.data.not_found_list.map(staff => `
                                             <tr class="border-b border-yellow-200">
                                                 <td class="px-2 py-1">${staff.staff_id}</td>
                                                 <td class="px-2 py-1">${staff.name}</td>
@@ -668,7 +787,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                             </div>
                             <p class="text-xs text-yellow-700 mt-2">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                These staff members were not found in the tblemployees table
+                                These staff members were not found in the tbl_personalinfo table
                             </p>
                         </div>
                     `;
@@ -680,8 +799,8 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                             <i class="fas fa-check-circle text-green-500 text-2xl mr-3"></i>
                             <div class="flex-1">
                                 <p class="text-green-800 font-semibold">Upload Successful!</p>
-                                <p class="text-sm text-green-700 mt-1">${result.message}</p>
-                                ${result.details ? `<p class="text-xs text-green-600 mt-2">${result.details}</p>` : ''}
+                                <p class="text-sm text-green-700 mt-1">${uploadResult.message}</p>
+                                ${uploadResult.details ? `<p class="text-xs text-green-600 mt-2">${uploadResult.details}</p>` : ''}
                             </div>
                         </div>
                         ${notFoundHTML}
@@ -689,10 +808,9 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                 `;
 
                     // Show SweetAlert with summary
-                    let alertMessage = result.message;
-                    if (result.data && result.data.not_found_count > 0) {
-                        alertMessage +=
-                            `\n\n⚠️ ${result.data.not_found_count} staff not found in database (see details below)`;
+                    let alertMessage = uploadResult.message;
+                    if (uploadResult.data && uploadResult.data.not_found_count > 0) {
+                        alertMessage += `\n\n⚠️ ${uploadResult.data.not_found_count} staff not found in database (see details below)`;
                     }
                     Swal.fire('Success!', alertMessage, 'success');
                 } else {
@@ -702,16 +820,17 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                             <i class="fas fa-exclamation-circle text-red-500 text-2xl mr-3"></i>
                             <div>
                                 <p class="text-red-800 font-semibold">Upload Failed</p>
-                                <p class="text-sm text-red-700 mt-1">${result.message || 'An error occurred'}</p>
+                                <p class="text-sm text-red-700 mt-1">${uploadResult.message || 'An error occurred'}</p>
                             </div>
                         </div>
                     </div>
                 `;
-                    Swal.fire('Error', result.message || 'Upload failed', 'error');
+                    Swal.fire('Error', uploadResult.message || 'Upload failed', 'error');
                 }
             }, 500);
         } catch (error) {
             console.error('Upload error:', error);
+            hideLoadingModal();
             document.getElementById('uploadProgress').classList.add('hidden');
             Swal.fire('Error', 'Failed to upload data: ' + error.message, 'error');
         } finally {
