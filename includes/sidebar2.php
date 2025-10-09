@@ -27,7 +27,7 @@ function isActivePage($page)
                 <a href="process.php" class="nav_link <?php echo isActivePage('process.php'); ?>"> <i class='bx bx-cog nav_icon'></i> <span class="nav_name">Process Transactions</span> </a>
                 <a href="status.php" class="nav_link <?php echo isActivePage('status.php'); ?>"> <i class='bx bx-info-circle nav_icon'></i> <span class="nav_name">Status</span> </a>
                 <a href="masterTrans.php" class="nav_link <?php echo isActivePage('masterTrans.php'); ?>"> <i class='bx bx-bar-chart-alt-2 nav_icon'></i> <span class="nav_name">Transaction</span> </a>
-                <a href="upload.php" class="nav_link <?php echo isActivePage('upload.php'); ?>"> <i class='bx bx-cloud-upload nav_icon'></i> <span class="nav_name">Upload</span> </a>
+                <a href="api_upload.php" class="nav_link <?php echo isActivePage('api_upload.php'); ?>"> <i class='bx bx-cloud-upload nav_icon'></i> <span class="nav_name">API Upload</span> </a>
                 <a href="loan_repayment_compare.php" class="nav_link <?php echo isActivePage('loan_repayment_compare.php'); ?>"> <i class='bx bx-git-compare nav_icon'></i> <span class="nav_name">Loan Compare</span> </a>
                 <a href="t_sms.php" class="nav_link <?php echo isActivePage('t_sms.php'); ?>"> <i class='bx bx-message-rounded-dots nav_icon'></i> <span class="nav_name">Transaction Alert</span> </a>
 
