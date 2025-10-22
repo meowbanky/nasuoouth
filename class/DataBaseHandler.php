@@ -212,7 +212,7 @@ class DatabaseHandler
                     SUM(tlb_mastertransaction.loanRepayment) AS loanrepayments,
                     SUM(tlb_mastertransaction.withdrawal) AS withrawals,
                     (SUM(tlb_mastertransaction.Contribution) + SUM(tlb_mastertransaction.loanRepayment) + IFNULL(SUM(tbl_refund.amount), 0)) AS total,
-                    ANY_VALUE(tbpayrollperiods.PayrollPeriod) AS PayrollPeriod,
+                    MAX(tbpayrollperiods.PayrollPeriod) AS PayrollPeriod,
                     GROUP_CONCAT(DISTINCT tlb_mastertransaction.periodid) AS periodids,
                     IFNULL(SUM(tbl_refund.amount), 0) AS refund,
                    ifnull( ((SUM(tlb_mastertransaction.loanAmount) + SUM(tlb_mastertransaction.interest)) - SUM(tlb_mastertransaction.loanRepayment)),0) AS loan_balance
