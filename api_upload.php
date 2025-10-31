@@ -11,7 +11,7 @@ if (!isset($_SESSION['UserID'])) {
 }
 
 // Database connection
-include 'Connections/db_constants.php';
+require_once __DIR__ . '/Connections/db_constants.php';
 
 $pageTitle = 'API Data Upload - OOUTH COOP';
 // include 'includes/header.php';
@@ -27,6 +27,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
+    <?php include('includes/header.php'); ?>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,7 +41,8 @@ require_once('classes/OOUTHSalaryAPIClient.php');
 </head>
 
 <body class="bg-gray-100">
-
+    <?php include('includes/header_nav.php'); ?>
+    <?php include "includes/sidebar2.php"; ?>
     <!-- Loading Modal -->
     <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
@@ -49,25 +51,27 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                 <div class="inline-flex items-center justify-center w-20 h-20 mb-6">
                     <div class="animate-spin rounded-full h-20 w-20 border-b-4 border-indigo-600"></div>
                 </div>
-                
+
                 <!-- Status Text -->
                 <h3 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-2">Uploading Data</h3>
                 <p id="modalMessage" class="text-gray-600 mb-6">Please wait while we process your data...</p>
-                
+
                 <!-- Progress Bar -->
                 <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
-                    <div id="modalProgressBar" class="bg-indigo-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    <div id="modalProgressBar" class="bg-indigo-600 h-3 rounded-full transition-all duration-500"
+                        style="width: 0%"></div>
                 </div>
-                
+
                 <!-- Progress Percentage -->
                 <div class="flex justify-between text-sm text-gray-600">
                     <span id="modalProgressText">Preparing upload...</span>
                     <span id="modalProgressPercent" class="font-semibold">0%</span>
                 </div>
-                
+
                 <!-- Record Counter -->
                 <div id="recordCounter" class="mt-4 text-sm text-gray-500 hidden">
-                    Processing: <span id="processedCount" class="font-semibold text-indigo-600">0</span> / <span id="totalCount" class="font-semibold">0</span> records
+                    Processing: <span id="processedCount" class="font-semibold text-indigo-600">0</span> / <span
+                        id="totalCount" class="font-semibold">0</span> records
                 </div>
             </div>
         </div>
@@ -75,11 +79,11 @@ require_once('classes/OOUTHSalaryAPIClient.php');
 
     <div class="max-w-7xl mx-auto p-6">
         <!-- Page Header -->
-        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg p-6 mb-8 mt-4 text-white">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold mb-2">
-                        <i class="fas fa-cloud-download-alt mr-3"></i>API Data Upload
+                        <i class="fas fa-cloud-download-alt mr-3 mt-4"></i>API Data Upload
                     </h1>
                     <p class="text-purple-100">Fetch and import data from OOUTH Salary API</p>
                 </div>
@@ -333,12 +337,13 @@ require_once('classes/OOUTHSalaryAPIClient.php');
         from {
             opacity: 0;
         }
+
         to {
             opacity: 1;
         }
     }
 
-    #loadingModal > div {
+    #loadingModal>div {
         animation: modalSlideUp 0.4s ease-out;
     }
 
@@ -347,6 +352,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
             transform: translateY(30px);
             opacity: 0;
         }
+
         to {
             transform: translateY(0);
             opacity: 1;
@@ -710,10 +716,10 @@ require_once('classes/OOUTHSalaryAPIClient.php');
             // Simulate progress stages
             updateModalProgress(10, 'Connecting to server...');
             updateRecordCounter(0, apiData.length);
-            
+
             await new Promise(resolve => setTimeout(resolve, 300));
             updateModalProgress(25, 'Sending data...');
-            
+
             const response = await fetch('api/upload_json_data.php', {
                 method: 'POST',
                 headers: {
@@ -741,7 +747,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
             if (uploadResult.success && uploadResult.data) {
                 updateRecordCounter(uploadResult.data.success, uploadResult.data.total);
             }
-            
+
             await new Promise(resolve => setTimeout(resolve, 800));
 
             // Hide modal
@@ -758,7 +764,8 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                     let notFoundHTML = '';
 
                     // Display not found staff if any
-                    if (uploadResult.data && uploadResult.data.not_found_list && uploadResult.data.not_found_list.length > 0) {
+                    if (uploadResult.data && uploadResult.data.not_found_list && uploadResult.data
+                        .not_found_list.length > 0) {
                         notFoundHTML = `
                         <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                             <p class="text-yellow-800 font-semibold mb-2">
@@ -810,7 +817,8 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                     // Show SweetAlert with summary
                     let alertMessage = uploadResult.message;
                     if (uploadResult.data && uploadResult.data.not_found_count > 0) {
-                        alertMessage += `\n\n⚠️ ${uploadResult.data.not_found_count} staff not found in database (see details below)`;
+                        alertMessage +=
+                            `\n\n⚠️ ${uploadResult.data.not_found_count} staff not found in database (see details below)`;
                     }
                     Swal.fire('Success!', alertMessage, 'success');
                 } else {

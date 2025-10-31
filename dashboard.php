@@ -86,7 +86,7 @@ foreach ($previousYears as $previousYear) {
                 </div>
 
                 <!-- Dashboard content here -->
-                <p>Welcome to your dashboard, <?php echo htmlspecialchars($_SESSION['FirstName']); ?>!</p>
+                <p>Welcome to your dashboard, <?php echo htmlspecialchars($_SESSION['FirstName'] ?? ''); ?>!</p>
                 <!-- You can add more dashboard widgets or content here -->
                 <!-- Dashboard Widgets -->
                 <div class="row">
