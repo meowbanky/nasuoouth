@@ -91,14 +91,8 @@ try {
                  AND t2.periodid <= ?),
                 0
             ) AS LoanBalance,
-            -- Total Contribution (same as ContributionBalance)
-            COALESCE(
-                (SELECT SUM(t2.Contribution) 
-                 FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = p.staff_id 
-                 AND t2.periodid <= ?),
-                0
-            ) AS TotalContribution
+            -- Total Contribution (Month Contribution + Month Loan Repayment)
+            COALESCE(t_period.Contribution, 0) + COALESCE(t_period.loanRepayment, 0) AS TotalContribution
         FROM 
             tlb_mastertransaction t_period
         INNER JOIN 
@@ -109,11 +103,11 @@ try {
             t_period.periodid = ?
             AND p.Status = 1
         ORDER BY 
-            p.Lname, p.Fname
+            p.staff_id
     ";
     
     $stmt = $db->pdo->prepare($query);
-    $stmt->execute([$periodId, $periodId, $periodId, $periodId, $periodId]);
+    $stmt->execute([$periodId, $periodId, $periodId, $periodId]);
     $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Check if data exists
