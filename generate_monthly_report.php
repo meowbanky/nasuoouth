@@ -56,14 +56,15 @@ try {
     // - Loan balance (cumulative loan - repayments up to this period)
     // - Total Contribution (cumulative contributions)
     
-    // Use tblemployees table with staff_id for joining
+    // Use tbl_personalinfo table from the correct SQL dump
+    // Columns: staff_id, Fname, Mname, Lname
     $query = "
         SELECT 
-            e.StaffID,
+            p.staff_id AS StaffID,
             CONCAT(
-                IFNULL(e.FirstName, ''), ' ',
-                IFNULL(e.MiddleName, ''), ' ',
-                IFNULL(e.LastName, '')
+                IFNULL(p.Lname, ''), ', ',
+                IFNULL(p.Fname, ''), ' ',
+                IFNULL(p.Mname, '')
             ) AS MemberName,
             per.PayrollPeriod AS PeriodName,
             -- Month contribution (for this specific period)
@@ -72,7 +73,7 @@ try {
             COALESCE(
                 (SELECT SUM(t2.Contribution) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = e.staff_id 
+                 WHERE t2.staff_id = p.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS ContributionBalance,
@@ -82,11 +83,11 @@ try {
             COALESCE(
                 (SELECT SUM(t2.loanAmount + t2.interest) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = e.staff_id 
+                 WHERE t2.staff_id = p.staff_id 
                  AND t2.periodid <= ?) -
                 (SELECT SUM(t2.loanRepayment) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = e.staff_id 
+                 WHERE t2.staff_id = p.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS LoanBalance,
@@ -94,20 +95,21 @@ try {
             COALESCE(
                 (SELECT SUM(t2.Contribution) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = e.staff_id 
+                 WHERE t2.staff_id = p.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS TotalContribution
         FROM 
             tlb_mastertransaction t_period
         INNER JOIN 
-            tblemployees e ON e.staff_id = t_period.staff_id
+            tbl_personalinfo p ON p.staff_id = t_period.staff_id
         INNER JOIN 
             tbpayrollperiods per ON t_period.periodid = per.Periodid
         WHERE 
             t_period.periodid = ?
+            AND p.Status = 1
         ORDER BY 
-            e.LastName, e.FirstName
+            p.Lname, p.Fname
     ";
     
     $stmt = $db->pdo->prepare($query);
