@@ -56,8 +56,7 @@ try {
     // - Loan balance (cumulative loan - repayments up to this period)
     // - Total Contribution (cumulative contributions)
     
-    // Use tblemployees table from the SQL dump provided
-    // CoopID (varchar) joins with staff_id (int) in tlb_mastertransaction
+    // Use tblemployees table with staff_id for joining
     $query = "
         SELECT 
             e.StaffID,
@@ -73,7 +72,7 @@ try {
             COALESCE(
                 (SELECT SUM(t2.Contribution) 
                  FROM tlb_mastertransaction t2 
-                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
+                 WHERE t2.staff_id = e.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS ContributionBalance,
@@ -83,11 +82,11 @@ try {
             COALESCE(
                 (SELECT SUM(t2.loanAmount + t2.interest) 
                  FROM tlb_mastertransaction t2 
-                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
+                 WHERE t2.staff_id = e.staff_id 
                  AND t2.periodid <= ?) -
                 (SELECT SUM(t2.loanRepayment) 
                  FROM tlb_mastertransaction t2 
-                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
+                 WHERE t2.staff_id = e.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS LoanBalance,
@@ -95,19 +94,18 @@ try {
             COALESCE(
                 (SELECT SUM(t2.Contribution) 
                  FROM tlb_mastertransaction t2 
-                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
+                 WHERE t2.staff_id = e.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS TotalContribution
         FROM 
             tlb_mastertransaction t_period
         INNER JOIN 
-            tblemployees e ON CAST(e.CoopID AS UNSIGNED) = t_period.staff_id
+            tblemployees e ON e.staff_id = t_period.staff_id
         INNER JOIN 
             tbpayrollperiods per ON t_period.periodid = per.Periodid
         WHERE 
             t_period.periodid = ?
-            AND (e.Status = '1' OR e.Status = 'Active')
         ORDER BY 
             e.LastName, e.FirstName
     ";
