@@ -335,6 +335,9 @@ try {
     $sheet->getPageMargins()->setBottom(0.5);
     $sheet->getPageMargins()->setLeft(0.5);
     
+    // Repeat header row on each page when printing
+    $sheet->getPageSetup()->setRowsToRepeatAtTop([5]);
+    
     // Freeze header row
     $sheet->freezePane('A6');
     
