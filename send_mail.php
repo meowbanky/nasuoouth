@@ -1,4 +1,7 @@
 <?php
+// Load error configuration (suppresses deprecation warnings from vendor packages)
+require_once __DIR__ . '/config/error_config.php';
+
 require __DIR__ . '/vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
