@@ -368,6 +368,10 @@ try {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = $_ENV['SMTP_PORT'];
 
+        // Set charset for proper emoji/unicode support
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
+        
         // Recipients
         $mail->setFrom('nasuoouth@emmaggi.com', 'OOUTH NASU');
         $mail->addAddress($email, '');
@@ -391,7 +395,7 @@ try {
             
             <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
                 <h2 style="color: #667eea; margin-top: 0; font-size: 22px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
-                    📊 Monthly Report
+                    &#128202; Monthly Report
                 </h2>
                 
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -437,9 +441,9 @@ try {
                 
                 <div style="background: #e7f3ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px;">
                     <p style="margin: 0; color: #495057; font-size: 14px;">
-                        <strong>📎 Attachment:</strong> ' . htmlspecialchars($filename) . '.xlsx<br>
-                        <strong>📋 Format:</strong> Microsoft Excel (.xlsx)<br>
-                        <strong>📊 Records:</strong> ' . number_format($totalRecords) . ' entries
+                        <strong>&#128206; Attachment:</strong> ' . htmlspecialchars($filename) . '.xlsx<br>
+                        <strong>&#128203; Format:</strong> Microsoft Excel (.xlsx)<br>
+                        <strong>&#128202; Records:</strong> ' . number_format($totalRecords) . ' entries
                     </p>
                 </div>
                 
