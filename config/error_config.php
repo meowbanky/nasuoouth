@@ -15,8 +15,9 @@ if (!ob_get_level()) {
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 
 // In production, don't display errors (log them instead)
-if (!defined('DEBUG_MODE') || !DEBUG_MODE) {
+// Default to production mode (hide errors) unless DEBUG_MODE is explicitly set to true
+$isDebugMode = defined('DEBUG_MODE') ? constant('DEBUG_MODE') : false;
+if (!$isDebugMode) {
     ini_set('display_errors', 0);
     ini_set('log_errors', 1);
 }
-
