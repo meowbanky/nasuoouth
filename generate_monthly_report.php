@@ -56,15 +56,15 @@ try {
     // - Loan balance (cumulative loan - repayments up to this period)
     // - Total Contribution (cumulative contributions)
     
-    // Use the correct table: tbl_personalinfo with correct column names
-    // Get transactions for the specific period and calculate cumulative balances
+    // Use tblemployees table from the SQL dump provided
+    // CoopID (varchar) joins with staff_id (int) in tlb_mastertransaction
     $query = "
         SELECT 
-            p.staff_id AS StaffID,
+            e.StaffID,
             CONCAT(
-                IFNULL(p.Lname, ''), ', ',
-                IFNULL(p.Fname, ''), ' ',
-                IFNULL(p.Mname, '')
+                IFNULL(e.FirstName, ''), ' ',
+                IFNULL(e.MiddleName, ''), ' ',
+                IFNULL(e.LastName, '')
             ) AS MemberName,
             per.PayrollPeriod AS PeriodName,
             -- Month contribution (for this specific period)
@@ -73,7 +73,7 @@ try {
             COALESCE(
                 (SELECT SUM(t2.Contribution) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = p.staff_id 
+                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS ContributionBalance,
@@ -83,11 +83,11 @@ try {
             COALESCE(
                 (SELECT SUM(t2.loanAmount + t2.interest) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = p.staff_id 
+                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
                  AND t2.periodid <= ?) -
                 (SELECT SUM(t2.loanRepayment) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = p.staff_id 
+                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS LoanBalance,
@@ -95,21 +95,21 @@ try {
             COALESCE(
                 (SELECT SUM(t2.Contribution) 
                  FROM tlb_mastertransaction t2 
-                 WHERE t2.staff_id = p.staff_id 
+                 WHERE CAST(e.CoopID AS UNSIGNED) = t2.staff_id 
                  AND t2.periodid <= ?),
                 0
             ) AS TotalContribution
         FROM 
             tlb_mastertransaction t_period
         INNER JOIN 
-            tbl_personalinfo p ON t_period.staff_id = p.staff_id
+            tblemployees e ON CAST(e.CoopID AS UNSIGNED) = t_period.staff_id
         INNER JOIN 
             tbpayrollperiods per ON t_period.periodid = per.Periodid
         WHERE 
             t_period.periodid = ?
-            AND p.Status = 1
+            AND (e.Status = '1' OR e.Status = 'Active')
         ORDER BY 
-            p.Lname, p.Fname
+            e.LastName, e.FirstName
     ";
     
     $stmt = $db->pdo->prepare($query);
@@ -186,7 +186,7 @@ try {
     
     foreach ($reportData as $data) {
         $sheet->setCellValue('A' . $row, $sn);
-        $sheet->setCellValue('B' . $row, $data['StaffID'] ?? $data['CoopID'] ?? '');
+        $sheet->setCellValue('B' . $row, $data['StaffID'] ?? '');
         $sheet->setCellValue('C' . $row, trim($data['MemberName']));
         $sheet->setCellValue('D' . $row, $data['PeriodName'] ?? $periodInfo['PayrollPeriod']);
         
