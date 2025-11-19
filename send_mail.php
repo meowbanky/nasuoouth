@@ -31,16 +31,30 @@ use Dotenv\Dotenv;
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
-// Get parameters from POST request
-$periodId = isset($_POST['period_id']) ? (int)$_POST['period_id'] : null;
-$email = isset($_POST['email']) ? $_POST['email'] : '';
+// Get parameters from POST or GET request
+$periodId = null;
+$email = '';
 
-if (!$periodId) {
-    die("Error: Period ID is required");
+// Try POST first, then GET
+if (isset($_POST['period_id'])) {
+    $periodId = (int)$_POST['period_id'];
+} elseif (isset($_GET['period_id'])) {
+    $periodId = (int)$_GET['period_id'];
 }
 
-if (empty($email)) {
-    die("Error: Email address is required");
+if (isset($_POST['email'])) {
+    $email = trim($_POST['email']);
+} elseif (isset($_GET['email'])) {
+    $email = trim($_GET['email']);
+}
+
+// Better error handling
+if (!$periodId || $periodId <= 0) {
+    die("Error: Period ID is required. Please provide period_id as a POST or GET parameter (e.g., ?period_id=259&email=user@example.com)");
+}
+
+if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    die("Error: Valid email address is required. Please provide email as a POST or GET parameter.");
 }
 
 try {
