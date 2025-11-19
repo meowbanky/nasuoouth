@@ -12,7 +12,7 @@ if (!ob_get_level()) {
 
 // Suppress deprecation warnings from vendor packages
 // These are from third-party code and will be fixed by package maintainers
-error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+error_reporting(E_ALL & ~E_DEPRECATED);
 
 // In production, don't display errors (log them instead)
 // Default to production mode (hide errors) unless DEBUG_MODE is explicitly set to true
