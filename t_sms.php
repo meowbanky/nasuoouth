@@ -55,17 +55,17 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
                     <?php if (isset($_SESSION['success_message'])) : ?>
-                        <div class="alert alert-success">
-                            <?= $_SESSION['success_message'];
+                    <div class="alert alert-success">
+                        <?= $_SESSION['success_message'];
                             unset($_SESSION['success_message']); ?>
-                        </div>
+                    </div>
                     <?php endif; ?>
 
                     <?php if (isset($_SESSION['error_message'])) : ?>
-                        <div class="alert alert-danger">
-                            <?= $_SESSION['error_message'];
+                    <div class="alert alert-danger">
+                        <?= $_SESSION['error_message'];
                             unset($_SESSION['error_message']); ?>
-                        </div>
+                    </div>
                     <?php endif; ?>
                     <div class="card">
                         <h5 class="card-header">Send Transacton SMS</h5>
@@ -73,7 +73,8 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
                             <form method="POST" id="statusForm" name="statusForm">
                                 <!-- Form Fields -->
                                 <div class="search-box">
-                                    <input type="text" name="search" id="search" class=" search-input" placeholder="Search..." autofocus>
+                                    <input type="text" name="search" id="search" class=" search-input"
+                                        placeholder="Search..." autofocus>
                                     <i class="fas fa-search search-icon"></i>
                                 </div>
 
@@ -95,11 +96,12 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
                                     <select name="period" id="period" class="form-control custom-select">
                                         <option value="">Select Period</option>
                                         <?php foreach ($periods as $period) { ?>
-                                            <option value="<?php echo $period['Periodid']; ?>" <?php if (isset($_SESSION['period'])) {
+                                        <option value="<?php echo $period['Periodid']; ?>" <?php if (isset($_SESSION['period'])) {
                                                                                                     if ($_SESSION['period'] == $period['Periodid']) {
                                                                                                         echo "selected";
                                                                                                     }
-                                                                                                } ?>><?php echo $period['PayrollPeriod']; ?></option>
+                                                                                                } ?>>
+                                            <?php echo $period['PayrollPeriod']; ?></option>
                                         <?php } ?>
                                     </select>
                                 </div>
@@ -107,10 +109,13 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
 
 
                                 <div class="form-group">
-                                    <button type="submit" class="btn btn-primary" name="Submit" value="Save">Send SMS</button>
-                                    <button type="button" class="btn btn-danger hidden" name="export" id="export" value="Export">Export Excel</button>
-                                    <button type="button" class="btn btn-warning hidden" name="emailButton" id="emailButton" value="Mail">Send as Mail</button>
-                                 </div>
+                                    <button type="submit" class="btn btn-primary" name="Submit" value="Save">Send
+                                        SMS</button>
+                                    <button type="button" class="btn btn-danger hidden" name="export" id="export"
+                                        value="Export">Export Excel</button>
+                                    <button type="button" class="btn btn-warning hidden" name="emailButton"
+                                        id="emailButton" value="Mail">Send as Mail</button>
+                                </div>
                             </form>
                         </div>
 
@@ -130,103 +135,178 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
 <?php include("includes/nav_script.php"); ?>
 
 <script>
-    $(document).ready(function() {
+$(document).ready(function() {
 
-        $('#emailButton').on('click', function() {
-            $('#overlay').fadeIn();
-            const email = prompt("Please enter the employee's email address:");
-            var table = document.getElementById('smstable').outerHTML;
-            var select = document.getElementById('period');
-            var selectedFilename = select.options[select.selectedIndex].text;
-            var filename = selectedFilename;
+    $('#emailButton').on('click', function() {
+        var select = document.getElementById('period');
+        var periodId = select.value;
 
-            if (email) {
-                $.ajax({
-                    url: 'send_mail.php',
-                    type: 'POST',
-                    data: {
-                        email: email,
-                        html:  table,
-                        filename: filename
-                    },
-                    success: function(response) {
-                        $('#overlay').fadeOut('fast', function() {
-                           alert(response)
-                        });
-                    },
-                    error: function(xhr, status, error) {
-                        $('#overlay').fadeOut('fast', function() {
-                            alert('Error sending email: ' + error)
-                        });
-                    }
-                });
-            }
-        });
-        $("#search").on('keyup', function() {
-            if ($("#search").val().trim() === '') {
-                $("#name").val('');
-                $("#staff_id").val('');
-            }
+        if (!periodId || periodId === '') {
+            alert('Please select a period first.');
+            return;
+        }
 
-        })
-        $("#search").on('focus', function() {
-            $("#search").select();
-        })
-        $("#search").autocomplete({
-            source: function(request, response) {
-                $.ajax({
-                    url: "fetch_names.php",
-                    type: "GET",
-                    dataType: "json",
-                    data: {
-                        term: request.term
-                    },
-                    success: function(data) {
-                        response(data);
-                    }
-                });
-            },
-            minLength: 2, // Set minimum length of input to start showing suggestions
-            select: function(event, ui) {
+        $('#overlay').fadeIn();
+        const email = prompt("Please enter the recipient's email address:");
 
-                $("#name").val(ui.item.label);
-                $("#staff_id").val(ui.item.value);
-                $("#period").focus();
-                return false;
-            }
-        });
-
-        $('#period').on('change', function() {
-            try {
-                $('#export').addClass('hidden');
-                $('#emailButton').addClass('hidden')
-                let hasErrors = false;
-
-                // Clear previous error messages
-                $('.error-message').remove();
-                $('.form-control').removeClass('is-invalid');
-
-                // If any initial validation failed, stop here
-                if (hasErrors) {
-                    $('html, body').animate({
-                        scrollTop: $('.is-invalid').first().offset().top - 100
-                    }, 200);
-                    return; // Stop execution
+        if (email) {
+            $.ajax({
+                url: 'send_mail.php',
+                type: 'POST',
+                data: {
+                    email: email,
+                    period_id: periodId
+                },
+                success: function(response) {
+                    $('#overlay').fadeOut('fast', function() {
+                        alert(response)
+                    });
+                },
+                error: function(xhr, status, error) {
+                    $('#overlay').fadeOut('fast', function() {
+                        alert('Error sending email: ' + error)
+                    });
                 }
+            });
+        } else {
+            $('#overlay').fadeOut();
+        }
+    });
+    $("#search").on('keyup', function() {
+        if ($("#search").val().trim() === '') {
+            $("#name").val('');
+            $("#staff_id").val('');
+        }
 
+    })
+    $("#search").on('focus', function() {
+        $("#search").select();
+    })
+    $("#search").autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                url: "fetch_names.php",
+                type: "GET",
+                dataType: "json",
+                data: {
+                    term: request.term
+                },
+                success: function(data) {
+                    response(data);
+                }
+            });
+        },
+        minLength: 2, // Set minimum length of input to start showing suggestions
+        select: function(event, ui) {
+
+            $("#name").val(ui.item.label);
+            $("#staff_id").val(ui.item.value);
+            $("#period").focus();
+            return false;
+        }
+    });
+
+    $('#period').on('change', function() {
+        try {
+            $('#export').addClass('hidden');
+            $('#emailButton').addClass('hidden')
+            let hasErrors = false;
+
+            // Clear previous error messages
+            $('.error-message').remove();
+            $('.form-control').removeClass('is-invalid');
+
+            // If any initial validation failed, stop here
+            if (hasErrors) {
+                $('html, body').animate({
+                    scrollTop: $('.is-invalid').first().offset().top - 100
+                }, 200);
+                return; // Stop execution
+            }
+
+            $('#overlay').fadeIn();
+
+            var formData = $("#statusForm").serialize(); // Serializes form data for Ajax
+            $.ajax({
+                type: 'GET',
+                url: 'getTransDetails.php', // Adjust if necessary
+                data: formData,
+                success: function(response) {
+                    // Handle success
+                    $('#overlay').fadeOut('fast', function() {
+                        $("#statusDetails").html(response);
+                        $('#export').removeClass('hidden');
+                        $('#emailButton').removeClass('hidden');
+                    });
+
+                },
+                error: function() {
+                    // Handle error
+                    alert('Form submission failed.');
+                },
+                complete: function() {
+                    // Always executed after the AJAX call completes
+                    $('#overlay').fadeOut();
+                }
+            });
+        } catch (error) {
+            console.error('An error occurred:', error);
+
+        }
+    });
+
+
+    $('#statusForm').on('submit', async function(event) {
+        event.preventDefault(); // Prevent the form from submitting immediately
+
+        // Initially, no errors
+        let hasErrors = false;
+
+        // Clear previous error messages
+        $('.error-message').remove();
+        $('.form-control').removeClass('is-invalid');
+
+        // Check if period field is filled
+        if ($('#period').val().trim() === '') {
+            $('#period').addClass('is-invalid').after(
+                '<div class="error-message text-danger">Period is required.</div>');
+            hasErrors = true;
+        }
+        // // Check if period field is filled
+        // if ($('#staff_id').val().trim() === '') {
+        //     $('#staff_id').addClass('is-invalid').after('<div class="error-message text-danger">Staff No is required.</div>');
+        //     hasErrors = true;
+        // }
+
+        // If any initial validation failed, stop here
+        if (hasErrors) {
+            $('html, body').animate({
+                scrollTop: $('.is-invalid').first().offset().top - 100
+            }, 200);
+            return; // Stop execution
+        }
+
+
+        try {
+
+            if (confirm("Are you sure you want to send sms alert")) {
+                // Show overlay    
                 $('#overlay').fadeIn();
-
-                var formData = $("#statusForm").serialize(); // Serializes form data for Ajax
+                var formData = $(this).serialize(); // Serializes form data for Ajax
                 $.ajax({
                     type: 'GET',
-                    url: 'getTransDetails.php', // Adjust if necessary
+                    url: 'sendTalert.php', // Adjust if necessary
                     data: formData,
+                    xhrFields: {
+                        onprogress: function(e) {
+                            $('#sample_1').html(e.target.responseText);
+                            console.log(e.target.responseText);
+                        }
+                    },
                     success: function(response) {
                         // Handle success
                         $('#overlay').fadeOut('fast', function() {
-                            $("#statusDetails").html(response);
-                            $('#export').removeClass('hidden');
-                            $('#emailButton').removeClass('hidden');
+                            $("#sample_1").html(response);
                         });
 
                     },
@@ -239,129 +319,61 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
                         $('#overlay').fadeOut();
                     }
                 });
-            } catch (error) {
-                console.error('An error occurred:', error);
-
             }
-        });
+        } catch (error) {
+            console.error('An error occurred:', error);
 
-
-        $('#statusForm').on('submit', async function(event) {
-            event.preventDefault(); // Prevent the form from submitting immediately
-
-            // Initially, no errors
-            let hasErrors = false;
-
-            // Clear previous error messages
-            $('.error-message').remove();
-            $('.form-control').removeClass('is-invalid');
-
-            // Check if period field is filled
-            if ($('#period').val().trim() === '') {
-                $('#period').addClass('is-invalid').after('<div class="error-message text-danger">Period is required.</div>');
-                hasErrors = true;
-            }
-            // // Check if period field is filled
-            // if ($('#staff_id').val().trim() === '') {
-            //     $('#staff_id').addClass('is-invalid').after('<div class="error-message text-danger">Staff No is required.</div>');
-            //     hasErrors = true;
-            // }
-
-            // If any initial validation failed, stop here
-            if (hasErrors) {
-                $('html, body').animate({
-                    scrollTop: $('.is-invalid').first().offset().top - 100
-                }, 200);
-                return; // Stop execution
-            }
-
-
-            try {
-
-                if (confirm("Are you sure you want to send sms alert")) {
-                    // Show overlay    
-                    $('#overlay').fadeIn();
-                    var formData = $(this).serialize(); // Serializes form data for Ajax
-                    $.ajax({
-                        type: 'GET',
-                        url: 'sendTalert.php', // Adjust if necessary
-                        data: formData,
-                        xhrFields: {
-                            onprogress: function(e) {
-                                $('#sample_1').html(e.target.responseText);
-                                console.log(e.target.responseText);
-                            }
-                        },
-                        success: function(response) {
-                            // Handle success
-                            $('#overlay').fadeOut('fast', function() {
-                                $("#sample_1").html(response);
-                            });
-
-                        },
-                        error: function() {
-                            // Handle error
-                            alert('Form submission failed.');
-                        },
-                        complete: function() {
-                            // Always executed after the AJAX call completes
-                            $('#overlay').fadeOut();
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('An error occurred:', error);
-
-            }
-        });
-
-
-
-
-
+        }
     });
+
+
+
+
+
+});
 </script>
 
 <script>
+$('#export').click(function() {
+    exportTable();
+})
 
-    $('#export').click(function(){
-        exportTable();
-    })
-
-    function exportTable() {
-        // Get the table HTML
-        var table = document.getElementById('smstable').outerHTML;
-        var select = document.getElementById('period');
-        var selectedFilename = select.options[select.selectedIndex].text;
-
-
-        var filename = selectedFilename;
+function exportTable() {
+    // Get the table HTML
+    var table = document.getElementById('smstable').outerHTML;
+    var select = document.getElementById('period');
+    var selectedFilename = select.options[select.selectedIndex].text;
 
 
-        $.ajax({
-            url: 'export_excel.php',
-            type: 'POST',
-            data: {html: table},
-            xhrFields: {
-                responseType: 'blob'
-            },
-            success: function (data) {
-                var a = document.createElement('a');
-                var url = window.URL.createObjectURL(data);
-                a.href = url;
-                a.download = filename + '.xlsx';
-                document.body.append(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-            },
-            error: function () {
-                alert('Failed to export table');
-            }
-        });
+    var filename = selectedFilename;
 
-        console.log(table);
-    }
+
+    $.ajax({
+        url: 'export_excel.php',
+        type: 'POST',
+        data: {
+            html: table
+        },
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function(data) {
+            var a = document.createElement('a');
+            var url = window.URL.createObjectURL(data);
+            a.href = url;
+            a.download = filename + '.xlsx';
+            document.body.append(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        },
+        error: function() {
+            alert('Failed to export table');
+        }
+    });
+
+    console.log(table);
+}
 </script>
 
 
