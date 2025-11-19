@@ -56,109 +56,69 @@ try {
     // - Loan balance (cumulative loan - repayments up to this period)
     // - Total Contribution (cumulative contributions)
     
+    // Use the correct table: tbl_personalinfo with correct column names
+    // Get transactions for the specific period and calculate cumulative balances
     $query = "
         SELECT 
-            e.CoopID,
-            e.StaffID,
+            p.staff_id AS StaffID,
             CONCAT(
-                IFNULL(e.FirstName, ''), ' ',
-                IFNULL(e.MiddleName, ''), ' ',
-                IFNULL(e.LastName, '')
+                IFNULL(p.Lname, ''), ', ',
+                IFNULL(p.Fname, ''), ' ',
+                IFNULL(p.Mname, '')
             ) AS MemberName,
-            p.PayrollPeriod AS PeriodName,
-            p.PhysicalMonth,
-            p.PhysicalYear,
+            per.PayrollPeriod AS PeriodName,
             -- Month contribution (for this specific period)
-            COALESCE(SUM(CASE WHEN t.periodid = ? THEN t.Contribution ELSE 0 END), 0) AS MonthContribution,
+            COALESCE(t_period.Contribution, 0) AS MonthContribution,
             -- Contribution balance (cumulative up to this period)
-            COALESCE(SUM(CASE WHEN t.periodid <= ? THEN t.Contribution ELSE 0 END), 0) AS ContributionBalance,
+            COALESCE(
+                (SELECT SUM(t2.Contribution) 
+                 FROM tlb_mastertransaction t2 
+                 WHERE t2.staff_id = p.staff_id 
+                 AND t2.periodid <= ?),
+                0
+            ) AS ContributionBalance,
             -- Month loan repayment (for this specific period)
-            COALESCE(SUM(CASE WHEN t.periodid = ? THEN t.loanRepayment ELSE 0 END), 0) AS MonthLoanRepayment,
+            COALESCE(t_period.loanRepayment, 0) AS MonthLoanRepayment,
             -- Loan balance (cumulative loan amount - repayments up to this period)
             COALESCE(
-                SUM(CASE WHEN t.periodid <= ? THEN (t.loanAmount + t.interest) ELSE 0 END) - 
-                SUM(CASE WHEN t.periodid <= ? THEN t.loanRepayment ELSE 0 END),
+                (SELECT SUM(t2.loanAmount + t2.interest) 
+                 FROM tlb_mastertransaction t2 
+                 WHERE t2.staff_id = p.staff_id 
+                 AND t2.periodid <= ?) -
+                (SELECT SUM(t2.loanRepayment) 
+                 FROM tlb_mastertransaction t2 
+                 WHERE t2.staff_id = p.staff_id 
+                 AND t2.periodid <= ?),
                 0
             ) AS LoanBalance,
             -- Total Contribution (same as ContributionBalance)
-            COALESCE(SUM(CASE WHEN t.periodid <= ? THEN t.Contribution ELSE 0 END), 0) AS TotalContribution
+            COALESCE(
+                (SELECT SUM(t2.Contribution) 
+                 FROM tlb_mastertransaction t2 
+                 WHERE t2.staff_id = p.staff_id 
+                 AND t2.periodid <= ?),
+                0
+            ) AS TotalContribution
         FROM 
-            tblemployees e
-        LEFT JOIN 
-            tlb_mastertransaction t ON CAST(e.CoopID AS UNSIGNED) = t.staff_id
-        LEFT JOIN 
-            tbpayrollperiods p ON t.periodid = p.Periodid
+            tlb_mastertransaction t_period
+        INNER JOIN 
+            tbl_personalinfo p ON t_period.staff_id = p.staff_id
+        INNER JOIN 
+            tbpayrollperiods per ON t_period.periodid = per.Periodid
         WHERE 
-            e.Status = 'Active' OR e.Status = '1'
-        GROUP BY 
-            e.CoopID, e.StaffID, e.FirstName, e.MiddleName, e.LastName, p.PayrollPeriod, p.PhysicalMonth, p.PhysicalYear
-        HAVING 
-            MonthContribution > 0 OR MonthLoanRepayment > 0 OR ContributionBalance > 0
+            t_period.periodid = ?
+            AND p.Status = 1
         ORDER BY 
-            e.LastName, e.FirstName
+            p.Lname, p.Fname
     ";
     
     $stmt = $db->pdo->prepare($query);
-    $stmt->execute([$periodId, $periodId, $periodId, $periodId, $periodId, $periodId]);
+    $stmt->execute([$periodId, $periodId, $periodId, $periodId, $periodId]);
     $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // If no data found, try alternative query structure
+    // Check if data exists
     if (empty($reportData)) {
-        $query = "
-            SELECT 
-                e.CoopID,
-                e.StaffID,
-                CONCAT(
-                    IFNULL(e.FirstName, ''), ' ',
-                    IFNULL(e.MiddleName, ''), ' ',
-                    IFNULL(e.LastName, '')
-                ) AS MemberName,
-                p.PayrollPeriod AS PeriodName,
-                p.PhysicalMonth,
-                p.PhysicalYear,
-                COALESCE(t.Contribution, 0) AS MonthContribution,
-                COALESCE(
-                    (SELECT SUM(t2.Contribution) 
-                     FROM tlb_mastertransaction t2 
-                     WHERE t2.staff_id = CAST(e.CoopID AS UNSIGNED) 
-                     AND t2.periodid <= ?),
-                    0
-                ) AS ContributionBalance,
-                COALESCE(t.loanRepayment, 0) AS MonthLoanRepayment,
-                COALESCE(
-                    (SELECT SUM(t2.loanAmount + t2.interest) 
-                     FROM tlb_mastertransaction t2 
-                     WHERE t2.staff_id = CAST(e.CoopID AS UNSIGNED) 
-                     AND t2.periodid <= ?) -
-                    (SELECT SUM(t2.loanRepayment) 
-                     FROM tlb_mastertransaction t2 
-                     WHERE t2.staff_id = CAST(e.CoopID AS UNSIGNED) 
-                     AND t2.periodid <= ?),
-                    0
-                ) AS LoanBalance,
-                COALESCE(
-                    (SELECT SUM(t2.Contribution) 
-                     FROM tlb_mastertransaction t2 
-                     WHERE t2.staff_id = CAST(e.CoopID AS UNSIGNED) 
-                     AND t2.periodid <= ?),
-                    0
-                ) AS TotalContribution
-            FROM 
-                tlb_mastertransaction t
-            INNER JOIN 
-                tblemployees e ON CAST(e.CoopID AS UNSIGNED) = t.staff_id
-            INNER JOIN 
-                tbpayrollperiods p ON t.periodid = p.Periodid
-            WHERE 
-                t.periodid = ?
-                AND (e.Status = 'Active' OR e.Status = '1')
-            ORDER BY 
-                e.LastName, e.FirstName
-        ";
-        
-        $stmt = $db->pdo->prepare($query);
-        $stmt->execute([$periodId, $periodId, $periodId, $periodId, $periodId]);
-        $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        die("No data found for period ID: $periodId. Please verify that transactions exist for this period.");
     }
     
     // Create new Spreadsheet
@@ -328,4 +288,3 @@ try {
     die("Error generating report: " . $e->getMessage());
 }
 ?>
-
