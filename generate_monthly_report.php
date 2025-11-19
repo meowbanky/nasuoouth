@@ -212,7 +212,37 @@ try {
         $sheet->setCellValue('A' . $row, $sn);
         $sheet->setCellValue('B' . $row, $data['StaffID'] ?? '');
         $sheet->setCellValue('C' . $row, trim($data['MemberName']));
-        $sheet->setCellValue('D' . $row, $data['PeriodName'] ?? $periodInfo['PayrollPeriod']);
+        
+        // Format period name to short date format
+        $periodName = $data['PeriodName'] ?? $periodInfo['PayrollPeriod'];
+        $shortPeriodDate = '';
+        if (!empty($periodInfo['PhysicalMonth']) && !empty($periodInfo['PhysicalYear'])) {
+            $month = trim($periodInfo['PhysicalMonth']);
+            $year = trim($periodInfo['PhysicalYear']);
+            $monthNum = date('n', strtotime($month . ' 1'));
+            if ($monthNum) {
+                $shortMonth = date('M', mktime(0, 0, 0, $monthNum, 1));
+                $shortPeriodDate = $shortMonth . ' ' . $year;
+            } else {
+                $shortPeriodDate = substr($month, 0, 3) . ' ' . $year;
+            }
+        } else {
+            // Try to extract from PayrollPeriod
+            if (preg_match('/(\w+)\s*-\s*(\d{4})/i', $periodName, $matches)) {
+                $month = $matches[1];
+                $year = $matches[2];
+                $monthNum = date('n', strtotime($month . ' 1'));
+                if ($monthNum) {
+                    $shortMonth = date('M', mktime(0, 0, 0, $monthNum, 1));
+                    $shortPeriodDate = $shortMonth . ' ' . $year;
+                } else {
+                    $shortPeriodDate = substr($month, 0, 3) . ' ' . $year;
+                }
+            } else {
+                $shortPeriodDate = $periodName;
+            }
+        }
+        $sheet->setCellValue('D' . $row, $shortPeriodDate);
         
         // Format currency values
         $monthContribution = (float)($data['MonthContribution'] ?? 0);
