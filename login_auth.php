@@ -1,4 +1,5 @@
 <?php
+require_once(__DIR__ . '/config/error_config.php');
 require_once('Connections/db_constants.php'); // Ensure this file uses MySQLi for database connection
 session_start();
 session_regenerate_id();

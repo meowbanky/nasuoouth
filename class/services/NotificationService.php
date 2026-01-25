@@ -9,13 +9,13 @@ class NotificationService {
     public function __construct($db) {
         $this->db = $db;
         $this->oneSignalConfig = [
-            'appId' => '2ec0cda9-7643-471c-9b3f-f607768d243d',
-            'apiKey' => 'os_v2_app_f3am3klwindrzgz76ydxndjehwojhjtgmfdun24d3inh4lbrvlvtrxpvnvlxuj3p3a44ykijqmlz53ovuvial3twmiwtwzstfzcyo5y'
+            'appId' => $_ENV['ONESIGNAL_APP_ID'],
+            'apiKey' => $_ENV['ONESIGNAL_API_KEY']
         ];
         $this->smsConfig = [
-            'sender' => 'NASUOOUTH',
-            'apiKey' => 'TLJJ8KJkyaxODiQB8Fpvv4Umni0YaiWDRAMFzUcPMgLQCmjGjsBPYDC0EfRuYz',
-            'endpoint' => 'https://v3.api.termii.com/api/sms/send'
+            'sender' => $_ENV['TERMII_SENDER'],
+            'apiKey' => $_ENV['TERMII_API_KEY'],
+            'endpoint' => $_ENV['TERMII_ENDPOINT']
         ];
     }
 

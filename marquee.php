@@ -8,9 +8,8 @@ if (!function_exists("GetSQLValueString")) {
 
   {
 
-
-
-    $theValue = function_exists("mysql_real_escape_string") ? mysql_real_escape_string($theValue) : mysql_escape_string($theValue);
+    global $conn;
+    $theValue = (isset($conn) && is_object($conn)) ? mysqli_real_escape_string($conn, $theValue) : addslashes($theValue);
 
 
 
@@ -136,10 +135,10 @@ $totalRows_loanDebt = mysqli_num_rows($loanDebt);
 
 
 
-  <strong>
-      <font color="#FF0000">SMS BALANCE:
+    <strong>
+        <font color="#FF0000">SMS BALANCE:
 
-        <?php
+            <?php
         try {
           //echo number_format(curlPost('http://api.ebulksms.com/balance/cov@emmaggi.com/9e6ce612af1fa2dc982e668176e806435830e5ff'));
           $response = curlPost('https://api.ng.termii.com/api/get-balance?api_key=TLJJ8KJkyaxODiQB8Fpvv4Umni0YaiWDRAMFzUcPMgLQCmjGjsBPYDC0EfRuYz');
@@ -148,7 +147,8 @@ $totalRows_loanDebt = mysqli_num_rows($loanDebt);
 
           $obj = json_decode($jsonobj);
 
-          echo number_format($obj->balance);
+          $balance = (isset($obj->balance) && $obj->balance !== null) ? (float)$obj->balance : 0;
+          echo number_format($balance);
         } catch (Exception $e) {
           echo '0';
         }
@@ -171,19 +171,19 @@ $totalRows_loanDebt = mysqli_num_rows($loanDebt);
 
     </strong>
 
-  <strong> Active Members: - <?php echo $row_activeMembers['count(*)']; ?></strong>||
+    <strong> Active Members: - <?php echo $row_activeMembers['count(*)']; ?></strong>||
 
-  <?php do { ?>
+    <?php do { ?>
 
     <strong><?php echo $row_gender['gender']; ?>:<?php echo $row_gender['count(gender)']; ?></strong>||
 
-  <?php } while ($row_gender = mysqli_fetch_assoc($gender)); ?>
+    <?php } while ($row_gender = mysqli_fetch_assoc($gender)); ?>
 
-  <strong>Savings:<?php echo number_format($row_contribution['SUM(tlb_mastertransaction.Contribution)'], 2); ?></strong>||
+    <strong>Savings:<?php echo number_format($row_contribution['SUM(tlb_mastertransaction.Contribution)'], 2); ?></strong>||
 
 
 
-  <strong>Loan:<?php echo number_format($row_loanDebt['LoanDebt'], 2); ?></strong>
+    <strong>Loan:<?php echo number_format($row_loanDebt['LoanDebt'], 2); ?></strong>
 
 
 

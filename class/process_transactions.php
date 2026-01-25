@@ -29,8 +29,8 @@ if (isset($_GET['PeriodID'])) {
     $dbHandler = new DataBaseHandler();
     $notification = new NotificationService($dbHandler->pdo);
 ?>
-    <div id="progress" style="border:1px solid #ccc; border-radius: 5px;"></div>
-    <div id="information" style="width:100%"></div>
+<div id="progress" style="border:1px solid #ccc; border-radius: 5px;"></div>
+<div id="information" style="width:100%"></div>
 
 <?php
     try {
@@ -39,8 +39,9 @@ if (isset($_GET['PeriodID'])) {
         $deductionsQuery = "SELECT tbl_contributions.staff_id, tbl_contributions.contribution, IFNULL(tbl_contributions.special_savings, 0) AS special_savings, tbl_contributions.loan AS loon
                         FROM tbl_contributions
                         INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id
-                        WHERE `Status` = 1";
+                        WHERE tbl_personalinfo.Status = 1 AND tbl_contributions.period_id = :period_id";
         $deductionsStmt = $pdo->prepare($deductionsQuery);
+        $deductionsStmt->bindParam(':period_id', $PeriodID, PDO::PARAM_INT);
         $deductionsStmt->execute();
         $deductions = $deductionsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -55,11 +56,12 @@ if (isset($_GET['PeriodID'])) {
                             SUM(tlb_mastertransaction.withdrawal) AS withdrawal, tbl_contributions.contribution AS contContribution, tbl_contributions.loan AS contLoan
                         FROM tlb_mastertransaction
                         RIGHT JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tlb_mastertransaction.staff_id
-                        LEFT JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id
+                        LEFT JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id AND tbl_contributions.period_id = :period_id
                         WHERE tbl_personalinfo.staff_id = :staff_id
                         GROUP BY staff_id";
             $balancesStmt = $pdo->prepare($balancesQuery);
             $balancesStmt->bindParam(':staff_id', $deduction['staff_id']);
+            $balancesStmt->bindParam(':period_id', $PeriodID, PDO::PARAM_INT);
             $balancesStmt->execute();
             $row_balances = $balancesStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -75,6 +77,9 @@ if (isset($_GET['PeriodID'])) {
             $completedStmt->execute();
             $totalRows_completed = $completedStmt->rowCount();
 
+            // Flag to track if transaction was processed
+            $transactionProcessed = false;
+
             if ($totalRows_completed == 0) {
                 if (($row_balances['Loanbalance'] == 0) && ($row_balances['contLoan'] == 0)) {
                     $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, completed) 
@@ -86,6 +91,7 @@ if (isset($_GET['PeriodID'])) {
                         ':contribution' => ($deduction['contribution'] + $deduction['special_savings']),
                         ':completed' => 1
                     ]);
+                    $transactionProcessed = true;
                 } elseif (($row_balances['Loanbalance'] == 0) && ($row_balances['contLoan'] > 0)) {
                     $refund = $row_balances['contLoan'];
                     $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, completed) 
@@ -105,6 +111,7 @@ if (isset($_GET['PeriodID'])) {
                         ':staff_id' => $deduction['staff_id'],
                         ':refund' => $refund
                     ]);
+                    $transactionProcessed = true;
                 } elseif ($row_balances['Loanbalance'] > 0) {
                     if ($row_balances['Loanbalance'] > 0) {
                         if ($row_balances['contLoan'] > 0) {
@@ -119,6 +126,7 @@ if (isset($_GET['PeriodID'])) {
                                     ':loanRepayment' => $row_balances['contLoan'],
                                     ':completed' => 1
                                 ]);
+                                $transactionProcessed = true;
                             } elseif ($row_balances['Loanbalance'] < $row_balances['contLoan']) {
                                 $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed) 
                             VALUES (:periodid, :staff_id, :contribution, :loanRepayment, :completed)";
@@ -140,6 +148,7 @@ if (isset($_GET['PeriodID'])) {
                                     ':staff_id' => $deduction['staff_id'],
                                     ':refund' => $refund
                                 ]);
+                                $transactionProcessed = true;
                             } elseif ($row_balances['Loanbalance'] == $row_balances['contLoan']) {
                                 $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed) 
                             VALUES (:periodid, :staff_id, :contribution, :loanRepayment, :completed)";
@@ -151,6 +160,7 @@ if (isset($_GET['PeriodID'])) {
                                     ':loanRepayment' => $row_balances['Loanbalance'],
                                     ':completed' => 1
                                 ]);
+                                $transactionProcessed = true;
                             }
                         } elseif ($row_balances['contLoan'] == 0) {
                             $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed) 
@@ -163,12 +173,18 @@ if (isset($_GET['PeriodID'])) {
                                 ':loanRepayment' => 0.0,
                                 ':completed' => 1
                             ]);
+                            $transactionProcessed = true;
                         }
                     }
                 }
             }
 
-            $notification->sendTransactionNotification($deduction['staff_id'],$PeriodID);
+            // Only send notification if transaction was successfully processed
+            if ($transactionProcessed) {
+                $notification->sendTransactionNotification($deduction['staff_id'], $PeriodID);
+            }
+            
+            // Increment counter for all transactions processed (whether new or already existed)
             $processedTransactions++;
 
             // Calculate progress percentage

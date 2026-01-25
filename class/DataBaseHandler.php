@@ -417,11 +417,24 @@ class DatabaseHandler
     }
 
     //Function to get contribution details
-    public function getContributionsDetails()
+    public function getContributionsDetails($period_id = null)
     {
         $sql = "SELECT tbl_personalinfo.staff_id, concat(tbl_personalinfo.Lname,' , ', tbl_personalinfo.Fname,' ', ifnull( tbl_personalinfo.Mname,'')) AS namess, tbl_contributions.contribution, 
-        tbl_contributions.loan, (tbl_contributions.contribution +tbl_contributions.loan) as total FROM tbl_contributions INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id WHERE status = 1 ";
+        tbl_contributions.loan, IFNULL(tbl_contributions.special_savings, 0) AS special_savings, (tbl_contributions.contribution + tbl_contributions.loan + IFNULL(tbl_contributions.special_savings, 0)) as total 
+        FROM tbl_contributions 
+        INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id 
+        WHERE tbl_personalinfo.status = 1";
+        
+        if ($period_id !== null && $period_id > 0) {
+            $sql .= " AND tbl_contributions.period_id = :period_id";
+        }
+        
         $stmt = $this->pdo->prepare($sql);
+        
+        if ($period_id !== null && $period_id > 0) {
+            $stmt->bindParam(':period_id', $period_id, PDO::PARAM_INT);
+        }
+        
         $stmt->execute();
         return $stmt->fetchAll();
     }

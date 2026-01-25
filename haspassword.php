@@ -1,6 +1,6 @@
 <?php
 set_time_limit(300);
-require_once('Connections/db_constants.php.php'); // Make sure this uses MySQLi
+require_once('Connections/db_constants.php'); // Make sure this uses MySQLi
 
 
 // Fetch all users
