@@ -25,7 +25,7 @@ function isActivePage($page)
                 <a href="add_loan.php" class="nav_link <?php echo isActivePage('add_loan.php'); ?>"> <i class='bx bx-money nav_icon'></i> <span class="nav_name"> Add Loan</span> </a>
                 <a href="contribution.php" class="nav_link <?php echo isActivePage('contribution.php'); ?>"> <i class='bx bx-donate-heart nav_icon'></i> <span class="nav_name">contribution</span> </a>
                 <a href="process.php" class="nav_link <?php echo isActivePage('process.php'); ?>"> <i class='bx bx-cog nav_icon'></i> <span class="nav_name">Process Transactions</span> </a>
-                <a href="status.php" class="nav_link <?php echo isActivePage('status.php'); ?>"> <i class='bx bx-info-circle nav_icon'></i> <span class="nav_name">Status</span> </a>
+                <a href="status.php" class="nav_link <?php echo isActivePage('status.php'); ?>"> <i class='bx bx-info-circle nav_icon'></i> <span class="nav_name">Member's Status</span> </a>
                 <a href="masterTrans.php" class="nav_link <?php echo isActivePage('masterTrans.php'); ?>"> <i class='bx bx-list-check nav_icon'></i> <span class="nav_name">Master Transaction</span> </a>
                 <a href="society_status.php" class="nav_link <?php echo isActivePage('society_status.php'); ?>"> <i class='bx bx-stats nav_icon'></i> <span class="nav_name">Society Status</span> </a>
                 <a href="api_upload.php" class="nav_link <?php echo isActivePage('api_upload.php'); ?>"> <i class='bx bx-cloud-upload nav_icon'></i> <span class="nav_name">API Upload</span> </a>
