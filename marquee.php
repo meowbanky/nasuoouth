@@ -107,25 +107,21 @@ $totalPages_gender = ceil($totalRows_gender / $maxRows_gender) - 1;
 
 mysqli_select_db($conn, $database);
 
-$query_contribution = "SELECT SUM(tlb_mastertransaction.Contribution) FROM tlb_mastertransaction INNER JOIN tbl_personalinfo ON tlb_mastertransaction.staff_id = tbl_personalinfo.staff_id WHERE tbl_personalinfo.status = 1";
+$query_contribution = "SELECT SUM(IFNULL(tlb_mastertransaction.Contribution, 0)) - SUM(IFNULL(tlb_mastertransaction.withdrawal, 0)) as TotalSavings FROM tlb_mastertransaction INNER JOIN tbl_personalinfo ON tlb_mastertransaction.staff_id = tbl_personalinfo.staff_id WHERE tbl_personalinfo.status = 1";
 
 $contribution = mysqli_query($conn, $query_contribution) or die(mysqli_error($conn));
 
 $row_contribution = mysqli_fetch_assoc($contribution);
 
-$totalRows_contribution = mysqli_num_rows($contribution);
-
 
 
 mysqli_select_db($conn, $database);
 
-$query_loanDebt = "SELECT (SUM(tlb_mastertransaction.loanAmount)+SUM(tlb_mastertransaction.interest))-(SUM(tlb_mastertransaction.loanRepayment)) as 'LoanDebt' FROM tlb_mastertransaction INNER JOIN tbl_personalinfo ON tlb_mastertransaction.staff_id = tbl_personalinfo.staff_id WHERE tbl_personalinfo.status = 1";
+$query_loanDebt = "SELECT (SUM(IFNULL(tlb_mastertransaction.loanAmount, 0)) + SUM(IFNULL(tlb_mastertransaction.interest, 0))) - SUM(IFNULL(tlb_mastertransaction.loanRepayment, 0)) as 'LoanDebt' FROM tlb_mastertransaction INNER JOIN tbl_personalinfo ON tlb_mastertransaction.staff_id = tbl_personalinfo.staff_id WHERE tbl_personalinfo.status = 1";
 
 $loanDebt = mysqli_query($conn, $query_loanDebt) or die(mysqli_error($conn));
 
 $row_loanDebt = mysqli_fetch_assoc($loanDebt);
-
-$totalRows_loanDebt = mysqli_num_rows($loanDebt);
 
 ?>
 
@@ -179,7 +175,7 @@ $totalRows_loanDebt = mysqli_num_rows($loanDebt);
 
     <?php } while ($row_gender = mysqli_fetch_assoc($gender)); ?>
 
-    <strong>Savings:<?php echo number_format($row_contribution['SUM(tlb_mastertransaction.Contribution)'], 2); ?></strong>||
+    <strong>Savings:<?php echo number_format($row_contribution['TotalSavings'], 2); ?></strong>||
 
 
 

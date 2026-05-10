@@ -483,14 +483,15 @@ class DatabaseHandler
     {
         try {
             $sql = "SELECT 
-                        SUM(IFNULL(Contribution, 0)) as TotalContribution, 
-                        SUM(IFNULL(withdrawal, 0)) as TotalWithdrawal,
-                        (SUM(IFNULL(Contribution, 0)) - SUM(IFNULL(withdrawal, 0))) as NetContribution,
-                        (SUM(IFNULL(loanAmount, 0)) + SUM(IFNULL(interest, 0))) as TotalLoan, 
-                        SUM(IFNULL(loanRepayment, 0)) as TotalLoanRepayment,
-                        ((SUM(IFNULL(loanAmount, 0)) + SUM(IFNULL(interest, 0))) - SUM(IFNULL(loanRepayment, 0))) as LoanBalance
-                    FROM tlb_mastertransaction 
-                    WHERE periodid <= :periodid";
+                        SUM(IFNULL(tlb.Contribution, 0)) as TotalContribution, 
+                        SUM(IFNULL(tlb.withdrawal, 0)) as TotalWithdrawal,
+                        (SUM(IFNULL(tlb.Contribution, 0)) - SUM(IFNULL(tlb.withdrawal, 0))) as NetContribution,
+                        (SUM(IFNULL(tlb.loanAmount, 0)) + SUM(IFNULL(tlb.interest, 0))) as TotalLoan, 
+                        SUM(IFNULL(tlb.loanRepayment, 0)) as TotalLoanRepayment,
+                        ((SUM(IFNULL(tlb.loanAmount, 0)) + SUM(IFNULL(tlb.interest, 0))) - SUM(IFNULL(tlb.loanRepayment, 0))) as LoanBalance
+                    FROM tlb_mastertransaction tlb
+                    INNER JOIN tbl_personalinfo ON tlb.staff_id = tbl_personalinfo.staff_id
+                    WHERE tlb.periodid <= :periodid AND tbl_personalinfo.status = 1";
             $stmt = $this->pdo->prepare($sql);
             $stmt->bindParam(':periodid', $period, PDO::PARAM_INT);
             $stmt->execute();
