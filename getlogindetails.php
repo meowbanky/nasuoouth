@@ -157,7 +157,7 @@ function getPassword(){
         },
         error: function() {
             // Handle error
-            alert('Form submission failed.');
+            Swal.fire({icon:'error', title:'Error', text:'Form submission failed.'});
         },
         complete: function() {
             // Always executed after the AJAX call completes
@@ -204,7 +204,7 @@ function getPassword(){
                     },
                     error: function() {
                         // Handle error
-                        alert('Form submission failed.');
+                        Swal.fire({icon:'error', title:'Error', text:'Form submission failed.'});
                     },
                     complete: function() {
                         // Always executed after the AJAX call completes
@@ -266,7 +266,7 @@ function getPassword(){
                     },
                     error: function() {
                         // Handle error
-                        alert('Form submission failed.');
+                        Swal.fire({icon:'error', title:'Error', text:'Form submission failed.'});
                     },
                     complete: function() {
                         // Always executed after the AJAX call completes

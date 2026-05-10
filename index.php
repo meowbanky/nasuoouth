@@ -118,9 +118,9 @@ session_destroy();
                 var password = $("#password").val().trim();
 
                 if (username === "") {
-                    alert("Please enter your username.");
+                    Swal.fire({icon:"warning", title:"Validation", text:"Please enter your username."});
                 } else if (password === "") {
-                    alert("Please enter your password.");
+                    Swal.fire({icon:"warning", title:"Validation", text:"Please enter your password."});
                 } else {
                     $.ajax({
                         type: "POST",

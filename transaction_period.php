@@ -159,7 +159,7 @@ $periods = $dbHandler->getLimitedOrderedItem('tbpayrollperiods', 'Periodid', 'DE
                     dataType: 'json',
                     success: function(response) {
                         if (response.exists) {
-                            alert('Period already exists.');
+                            Swal.fire({icon:'warning', text:'Period already exists.'});
                             $('#period').addClass('is-invalid');
                             resolve(false); // The period exists, resolve the promise with false
                         } else {
@@ -185,7 +185,7 @@ $periods = $dbHandler->getLimitedOrderedItem('tbpayrollperiods', 'Periodid', 'DE
                 dataType: 'json',
                 success: function(response) {
                     if (response.exists) {
-                        alert('Period No already exists.');
+                        Swal.fire({icon:'warning', text:'Period No already exists.'});
                         // Invalidate the field, e.g., by adding a visual cue or message
                         $('#period').addClass('is-invalid');
                     } else {

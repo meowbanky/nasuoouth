@@ -142,7 +142,7 @@ $(document).ready(function() {
         var periodId = select.value;
 
         if (!periodId || periodId === '') {
-            alert('Please select a period first.');
+            Swal.fire({icon:'warning', title:'Missing Period', text:'Please select a period first.'});
             return;
         }
 
@@ -159,12 +159,12 @@ $(document).ready(function() {
                 },
                 success: function(response) {
                     $('#overlay').fadeOut('fast', function() {
-                        alert(response)
+                        Swal.fire({icon:'success', title:'Email Sent', text: response});
                     });
                 },
                 error: function(xhr, status, error) {
                     $('#overlay').fadeOut('fast', function() {
-                        alert('Error sending email: ' + error)
+                        Swal.fire({icon:'error', title:'Error', text: 'Error sending email: ' + error});
                     });
                 }
             });
@@ -242,7 +242,7 @@ $(document).ready(function() {
                 },
                 error: function() {
                     // Handle error
-                    alert('Form submission failed.');
+                    Swal.fire({icon:'error', title:'Error', text:'Form submission failed.'});
                 },
                 complete: function() {
                     // Always executed after the AJAX call completes
@@ -289,9 +289,19 @@ $(document).ready(function() {
 
         try {
 
-            if (confirm("Are you sure you want to send sms alert")) {
-                // Show overlay    
-                $('#overlay').fadeIn();
+            const smsResult = await Swal.fire({
+                title: 'Send SMS Alert',
+                text: "Are you sure you want to send sms alert?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Send',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor: '#6c757d'
+            });
+            if (!smsResult.isConfirmed) return;
+            // Show overlay    
+            $('#overlay').fadeIn();
                 var formData = $(this).serialize(); // Serializes form data for Ajax
                 $.ajax({
                     type: 'GET',
@@ -312,14 +322,13 @@ $(document).ready(function() {
                     },
                     error: function() {
                         // Handle error
-                        alert('Form submission failed.');
+                        Swal.fire({icon:'error', title:'Error', text:'Form submission failed.'});
                     },
                     complete: function() {
                         // Always executed after the AJAX call completes
                         $('#overlay').fadeOut();
                     }
                 });
-            }
         } catch (error) {
             console.error('An error occurred:', error);
 
@@ -368,7 +377,7 @@ function exportTable() {
             a.remove();
         },
         error: function() {
-            alert('Failed to export table');
+            Swal.fire({icon:'error', title:'Export Failed', text:'Failed to export table'});
         }
     });
 

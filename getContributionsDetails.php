@@ -188,8 +188,7 @@ if (($_SERVER['REQUEST_METHOD'] == 'GET') and (isset($_GET['save']))) {
                 $("#loanRepayment").val(loanRepayment.toFixed(
                     2)); // Set loan repayment value with two decimal places
             } else {
-                alert("Amount should be greater than or equal to " + defaultCont.toFixed(
-                    2)); // Alert message with two decimal places
+                Swal.fire({icon: 'warning', title: 'Invalid Amount', text: "Amount should be greater than or equal to " + defaultCont.toFixed(2)});
                 //amountInput.value = ""; // Clear the Amount input field
                 // amountInput.focus(); // Set focus to the Amount input field
             }

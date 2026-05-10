@@ -11,6 +11,7 @@ require_once __DIR__. '/db_constants.php' ; // Include the DatabaseHandler class
 if (isset($_GET['PeriodID'])) {
 
     $PeriodID = filter_input(INPUT_GET, 'PeriodID', FILTER_SANITIZE_NUMBER_INT);
+    $sendSms = isset($_GET['send_sms']) ? filter_var($_GET['send_sms'], FILTER_VALIDATE_BOOLEAN) : false;
 
     $pdo;
     $options = [
@@ -36,12 +37,22 @@ if (isset($_GET['PeriodID'])) {
     try {
         // Create an instance of the DatabaseHandler class
 
+        $staff_id_filter = isset($_GET['staff_id_filter']) ? $_GET['staff_id_filter'] : 'ALL';
+
         $deductionsQuery = "SELECT tbl_contributions.staff_id, tbl_contributions.contribution, IFNULL(tbl_contributions.special_savings, 0) AS special_savings, tbl_contributions.loan AS loon
                         FROM tbl_contributions
                         INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id
                         WHERE tbl_personalinfo.Status = 1 AND tbl_contributions.period_id = :period_id";
+        
+        if ($staff_id_filter !== 'ALL' && !empty($staff_id_filter)) {
+            $deductionsQuery .= " AND tbl_contributions.staff_id = :staff_id_filter";
+        }
+
         $deductionsStmt = $pdo->prepare($deductionsQuery);
         $deductionsStmt->bindParam(':period_id', $PeriodID, PDO::PARAM_INT);
+        if ($staff_id_filter !== 'ALL' && !empty($staff_id_filter)) {
+            $deductionsStmt->bindParam(':staff_id_filter', $staff_id_filter, PDO::PARAM_STR);
+        }
         $deductionsStmt->execute();
         $deductions = $deductionsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -179,8 +190,8 @@ if (isset($_GET['PeriodID'])) {
                 }
             }
 
-            // Only send notification if transaction was successfully processed
-            if ($transactionProcessed) {
+            // Only send notification if transaction was successfully processed and send_sms is checked
+            if ($transactionProcessed && $sendSms) {
                 $notification->sendTransactionNotification($deduction['staff_id'], $PeriodID);
             }
             

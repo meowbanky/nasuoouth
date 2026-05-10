@@ -223,7 +223,7 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
                 error: function(xhr, status, error) {
                     // console.error('Failed to fetch loan balance');
                     $('#overlay').fade('fast', function() {
-                        alert(error);
+                        Swal.fire({icon:'warning', text:error});
                     });
 
                 }
@@ -243,7 +243,7 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
                 },
                 error: function(xhr, status, error) {
                     $('#overlay').fade('fast', function() {
-                        alert(error);
+                        Swal.fire({icon:'warning', text:error});
                     });
 
                     //console.log("Error fetching loan balance: " + error);

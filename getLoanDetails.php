@@ -109,13 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['deleted'])) {
                 }
             });
 
-            $('#delete').click(function(e) {
+            $('#delete').click(async function(e) {
                 // Check if at least one checkbox is checked
                 if ($('input[type="checkbox"]:checked').length === 0) {
-                    alert('Please select at least one loan to delete.');
+                    Swal.fire({icon:'warning', title:'No Selection', text:'Please select at least one loan to delete.'});
                     return; // Stop the function if no checkboxes are checked
                 }
-                if (confirm("Are you sure you want to delete these loans")) {
+                const delResult = await Swal.fire({title:'Delete Loans?',text:"Are you sure you want to delete these loans?",icon:'warning',showCancelButton:true,confirmButtonText:'Yes, Delete',cancelButtonText:'Cancel',confirmButtonColor:'#dc3545'});
+                if (delResult.isConfirmed) {
                     $('#overlay').fadeIn();
                     e.preventDefault(); // Prevent default form submission
 
@@ -127,13 +128,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['deleted'])) {
                         data: formData,
                         success: function(response) {
                             $('#overlay').fadeOut('fast', function() {
-                                alert('Selected loan have been deleted.');
+                                Swal.fire({icon:'success', title:'Deleted!', text:'Selected loans have been deleted.'});
                                 location.reload(); // Reload the page to reflect changes
                             });
                         },
                         error: function() {
                             $('#overlay').fadeOut('fast', function() {
-                                alert('An error occured');
+                                Swal.fire({icon:'error', title:'Error', text:'An error occurred.'});
 
                             });
                         }

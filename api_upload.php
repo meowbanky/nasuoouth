@@ -38,6 +38,9 @@ require_once('classes/OOUTHSalaryAPIClient.php');
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 
 <body class="bg-gray-100">
@@ -199,7 +202,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
                                 disabled>
                             <button id="exportBtn" disabled
                                 class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i class="fas fa-file-export mr-1"></i>Export
+                                <i class="fas fa-file-excel mr-1"></i>Export Excel
                             </button>
                         </div>
                     </div>
@@ -510,7 +513,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
         });
 
         // Export button
-        document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+        document.getElementById('exportBtn').addEventListener('click', exportToExcel);
 
         // Pagination buttons
         document.getElementById('prevPageBtn').addEventListener('click', () => changePage(-1));
@@ -640,8 +643,8 @@ require_once('classes/OOUTHSalaryAPIClient.php');
             filteredData = [...apiData];
         } else {
             filteredData = apiData.filter(item =>
-                item.staff_id.toLowerCase().includes(searchTerm) ||
-                item.name.toLowerCase().includes(searchTerm)
+                String(item.staff_id || '').toLowerCase().includes(searchTerm) ||
+                String(item.name || '').toLowerCase().includes(searchTerm)
             );
         }
 
@@ -865,36 +868,40 @@ require_once('classes/OOUTHSalaryAPIClient.php');
         document.getElementById('exportBtn').disabled = true;
     }
 
-    // Export to CSV
-    function exportToCSV() {
+    // Export to Excel
+    function exportToExcel() {
         if (filteredData.length === 0) {
             Swal.fire('Error', 'No data to export', 'error');
             return;
         }
 
-        const headers = ['Staff ID', 'Name', 'Amount'];
-        const rows = filteredData.map(item => [
-            item.staff_id,
-            item.name,
-            item.amount
-        ]);
+        // Format data for Excel
+        const dataForExcel = filteredData.map((item, index) => ({
+            'S/N': index + 1,
+            'Staff ID': item.staff_id,
+            'Name': item.name,
+            'Amount (N)': parseFloat(item.amount)
+        }));
 
-        let csvContent = headers.join(',') + '\n';
-        rows.forEach(row => {
-            csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
-        });
+        // Create a new workbook and add the data
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(dataForExcel);
 
-        const blob = new Blob([csvContent], {
-            type: 'text/csv'
-        });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${selectedPeriodInfo.description}_${selectedPeriodInfo.year}_${Date.now()}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        // Auto-size columns for better readability
+        const wscols = [{wch: 5}, {wch: 15}, {wch: 40}, {wch: 15}];
+        ws['!cols'] = wscols;
 
-        Swal.fire('Success', 'Data exported to CSV', 'success');
+        XLSX.utils.book_append_sheet(wb, ws, "Staff Data");
+
+        // Generate filename
+        const periodDesc = selectedApiPeriodInfo ? selectedApiPeriodInfo.description : 'Period';
+        const periodYear = selectedApiPeriodInfo ? selectedApiPeriodInfo.year : '';
+        const filename = `Data_Upload_${periodDesc}_${periodYear}_${Date.now()}.xlsx`.replace(/ /g, '_');
+
+        // Save the file
+        XLSX.writeFile(wb, filename);
+
+        Swal.fire('Success', 'Data exported to Excel', 'success');
     }
     </script>
 

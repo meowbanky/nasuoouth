@@ -12,12 +12,17 @@ if (!ob_get_level()) {
 
 // Suppress deprecation warnings from vendor packages
 // These are from third-party code and will be fixed by package maintainers
-error_reporting(E_ALL & ~E_DEPRECATED);
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 
-// In production, don't display errors (log them instead)
-// Default to production mode (hide errors) unless DEBUG_MODE is explicitly set to true
-$isDebugMode = defined('DEBUG_MODE') ? constant('DEBUG_MODE') : false;
-if (!$isDebugMode) {
+// Enforce display_errors off by default to prevent "headers sent" issues
+if (!defined('DEBUG_MODE') || !DEBUG_MODE) {
     ini_set('display_errors', 0);
     ini_set('log_errors', 1);
 }
+
+// Production mode settings are handled above
+// $isDebugMode = defined('DEBUG_MODE') ? constant('DEBUG_MODE') : false;
+// if (!$isDebugMode) {
+//     ini_set('display_errors', 0);
+//     ini_set('log_errors', 1);
+// }

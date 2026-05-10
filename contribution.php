@@ -169,7 +169,7 @@ $(document).ready(function() {
             if (period_id) {
                 fetchContributionsDetails(ui.item.value, period_id);
             } else {
-                alert('Please select a period first');
+                Swal.fire({icon:'warning', text:'Please select a period first'});
             }
             return false;
         }
@@ -187,7 +187,7 @@ $(document).ready(function() {
 
     function fetchContributionsDetails(staffId, periodId) {
         if (!periodId) {
-            alert('Please select a period first');
+            Swal.fire({icon:'warning', text:'Please select a period first'});
             return;
         }
 
@@ -231,7 +231,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 // console.error('Failed to fetch loan balance');
-                alert(error);
+                Swal.fire({icon:'warning', text:error});
             }
         });
     }
@@ -244,7 +244,7 @@ $(document).ready(function() {
         if (period_id) {
             fetchContributionsDetails(staff_id, period_id);
         } else {
-            alert('Please select a period first');
+            Swal.fire({icon:'warning', text:'Please select a period first'});
         }
     });
 
@@ -320,13 +320,13 @@ $(document).ready(function() {
                 data: formData,
                 success: function(response) {
                     // Handle success
-                    alert('Form submitted successfully.');
+                    Swal.fire({icon:'warning', text:'Form submitted successfully.'});
                     $('#loanForm')[0].reset(); // Clear form
                     fetchLoanDetails(period_id)
                 },
                 error: function() {
                     // Handle error
-                    alert('Form submission failed.');
+                    Swal.fire({icon:'warning', text:'Form submission failed.'});
                 },
                 complete: function() {
                     // Always executed after the AJAX call completes

@@ -28,10 +28,10 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert(data.message);
+                        Swal.fire({icon:'success', text: data.message});
                         // Redirect or take any other action on successful login
                     } else {
-                        alert('Login failed: ' + data.message);
+                        Swal.fire({icon:'error', title:'Login Failed', text: 'Login failed: ' + data.message});
                     }
                 });
         }

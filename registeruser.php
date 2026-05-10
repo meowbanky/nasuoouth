@@ -353,7 +353,7 @@ if ((isset($_POST["ButtonSearch"])) && ($_POST["ButtonSearch"] == "Search")) {
 
 
 
-                    alert('Giving up :( Cannot create an XMLHTTP instance');
+                    Swal.fire({icon:'error', text:'Giving up :( Cannot create an XMLHTTP instance'});
 
 
 
@@ -411,7 +411,7 @@ if ((isset($_POST["ButtonSearch"])) && ($_POST["ButtonSearch"] == "Search")) {
 
 
 
-                        alert("There was a problem with the request");
+                        Swal.fire({icon:'error', text:'There was a problem with the request'});
 
 
 
@@ -485,7 +485,7 @@ function checkedd (){
 
 		if((document.getElementById('CPassword').value) !=(document.getElementById('UPassword').value)){
 
-			alert("Password in Password field does not Match Password in Confirm Password Field");
+			Swal.fire({icon:'error', title:'Password Mismatch', text:'Password in Password field does not match Confirm Password Field'});
 
 			}
 
@@ -615,7 +615,7 @@ function reset(){
 
 	function mrn(){
 
-		alert(document.getElementById("initial_mrn").value);
+// debug removed: alert(document.getElementById("initial_mrn").value);
 
 		}
 
@@ -889,7 +889,7 @@ function ischecked(oFormEle,msg)
 
 
 
-                                alert(msg);
+                                Swal.fire({icon:"warning", text:msg});
 
 
 
@@ -979,7 +979,7 @@ function isSpace(s,message)
 
 
 
-                alert(message);
+                Swal.fire({icon:"warning", text:message});
 
 
 
@@ -1023,7 +1023,7 @@ function validate(){
 
    {
 
-     alert( "Please provide your First Name!" );
+     Swal.fire({icon:"warning", title:"Validation", text:"Please provide your First Name!"});
 
      document.eduEntry.Firstname.focus() ;
 
@@ -1037,7 +1037,7 @@ function validate(){
 
    {
 
-     alert( "Please provide your Last Name!" );
+     Swal.fire({icon:"warning", title:"Validation", text:"Please provide your Last Name!"});
 
      document.eduEntry.lastname.focus() ;
 
@@ -1049,7 +1049,7 @@ function validate(){
 
    {
 
-     alert( "Please provide Username!" );
+     Swal.fire({icon:"warning", title:"Validation", text:"Please provide Username!"});
 
      document.eduEntry.username.focus() ;
 
@@ -1063,7 +1063,7 @@ function validate(){
 
    {
 
-     alert( "Please provide Password!" );
+     Swal.fire({icon:"warning", title:"Validation", text:"Please provide Password!"});
 
      document.eduEntry.UPassword.focus() ;
 
@@ -1077,7 +1077,7 @@ function validate(){
 
    {
 
-     alert( "Please Confirm Password" );
+     Swal.fire({icon:"warning", title:"Validation", text:"Please Confirm Password"});
 
      document.eduEntry.CPassword.focus() ;
 
@@ -1089,7 +1089,7 @@ function validate(){
 
    if((document.getElementById('CPassword').value) !=(document.getElementById('UPassword').value)){
 
-			alert("Password in Password field does not Match Password in Confirm Password Field");
+			Swal.fire({icon:'error', title:'Password Mismatch', text:'Password in Password field does not match Confirm Password Field'});
 
 	 return false;
 
@@ -1239,7 +1239,7 @@ $(document).ready(function(){
 
                 else{
 
-                    alert('Problem with sql query');
+                    Swal.fire({icon:'error', title:'Error', text:'Problem with sql query'});
 
                 }
 

@@ -10,7 +10,8 @@ require_once('class/DataBaseHandler.php');
 $dbHandler = new DataBaseHandler();
 //Nok relationionship
 
-$loanCompares = $dbHandler->loanCompare();
+// Fetch periods for the dropdown
+$periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPeriod');
 
 
 ?>
@@ -63,6 +64,32 @@ $loanCompares = $dbHandler->loanCompare();
                     <div class="card-body">
 
 
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="periodSelect" class="form-label">Select Period:</label>
+                                <select id="periodSelect" class="form-control">
+                                    <?php foreach ($periods as $period) : ?>
+                                        <option value="<?= $period['Periodid']; ?>"><?= $period['PayrollPeriod']; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <!-- Added Filters -->
+                            <div class="col-md-4">
+                                <label for="tableSearch" class="form-label">Search:</label>
+                                <div class="position-relative">
+                                    <input type="text" id="tableSearch" class="form-control" placeholder="Name or Staff No...">
+                                    <span id="clearSearch" class="text-muted" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer; display: none; font-size: 1.2rem;">&times;</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="filterStatus" class="form-label">Filter Status:</label>
+                                <select id="filterStatus" class="form-control">
+                                    <option value="All">All</option>
+                                    <option value="Normal">Normal</option>
+                                    <option value="Reduce Repayment">Reduce Repayment</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <div class='table-responsive'>
@@ -78,23 +105,10 @@ $loanCompares = $dbHandler->loanCompare();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php $i = 1;
-
-                                foreach ($loanCompares as $loanCompare) { ?>
-                                    <tr>
-                                        <th scope="row"><?php echo $i; ?></th>
-                                        <td><?php echo $loanCompare['staff_id']; ?></td>
-                                        <td><?php echo $loanCompare['namee']; ?></td>
-                                        <td class="text-right">₦<?php echo number_format($loanCompare['loanBalance']); ?></td>
-                                        <td class="text-right">₦<?php echo number_format($loanCompare['loan']); ?></td>
-                                        <td class="text-right"><?php if ($loanCompare['loanBalance'] < $loanCompare['loan']) {
-                                                                    echo "<font color=\"#FF0000\"> Reduce Loan Repayment </font>";
-                                                                } else {
-                                                                    echo "<font color=\"#00FF00\"> Normal </font>";
-                                                                } ?></td>
-                                    </tr>
-                                <?php $i++;
-                                } ?>
+                            <tbody id="loanCompareBody">
+                                <!-- Data injected via AJAX -->
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
                             </tbody>
                             <tfoot>
                                 <tr>
@@ -125,9 +139,115 @@ $loanCompares = $dbHandler->loanCompare();
 
 <script>
     $(document).ready(function() {
+        
+        let allData = []; // Store fetched data
+
+        // Fetch Data on Load
+        var initialPeriod = $('#periodSelect').val();
+        fetchLoanComparison(initialPeriod);
+
+        // Events
+        $('#periodSelect').on('change', function() {
+            fetchLoanComparison($(this).val());
+        });
+
+        $('#tableSearch').on('keyup', function() {
+            // Show/Hide Clear Button
+            if ($(this).val().length > 0) {
+                $('#clearSearch').show();
+            } else {
+                $('#clearSearch').hide();
+            }
+            filterData();
+        });
+
+        // Clear Search Logic
+        $('#clearSearch').on('click', function() {
+            $('#tableSearch').val('');
+            $(this).hide();
+            filterData();
+        });
+
+        $('#filterStatus').on('change', filterData);
+
+        function fetchLoanComparison(periodId) {
+            if (!periodId) return;
+
+            $('#loanCompareBody').html('<tr><td colspan="6" class="text-center">Loading...</td></tr>');
+
+            $.ajax({
+                url: 'loanContri_api.php',
+                type: 'POST',
+                data: { 
+                    action: 'fetch_comparison',
+                    period_id: periodId 
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        allData = response.data.list; // Store data
+                        filterData(); // Initial render
+                    } else {
+                        Swal.fire({icon:'error', title:'Error', text: 'Error fetching data: ' + response.message});
+                    }
+                },
+                error: function() {
+                    console.error('Failed to fetch data');
+                    $('#loanCompareBody').html('<tr><td colspan="6" class="text-center text-danger">Error loading data.</td></tr>');
+                }
+            });
+        }
+
+        function filterData() {
+            const term = $('#tableSearch').val().toLowerCase();
+            const stat = $('#filterStatus').val();
+
+            const filtered = allData.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(term) || item.staff_no.toString().includes(term);
+                const matchesStatus = stat === 'All' || item.status === stat;
+                return matchesSearch && matchesStatus;
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(data) {
+            var tbody = $('#loanCompareBody');
+            tbody.empty();
+
+            if (data.length === 0) {
+                tbody.html('<tr><td colspan="6" class="text-center">No records found.</td></tr>');
+                return;
+            }
+
+            $.each(data, function(index, item) {
+                var remarkHtml = '';
+                if (item.status === 'Reduce Repayment') {
+                    remarkHtml = '<font color="#FF0000"> Reduce Loan Repayment </font>';
+                } else {
+                    remarkHtml = '<font color="#00FF00"> Normal </font>';
+                }
+
+                // Format numbers - consistent with loanContri_Compare.php
+                const fmt = (val) => '₦ ' + parseFloat(val || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+                var loanBalance = fmt(item.loan_balance);
+                var loanRepayment = fmt(item.loan_repayment);
+
+                var row = `<tr>
+                    <th scope="row">${index + 1}</th>
+                    <td>${item.staff_no}</td>
+                    <td>${item.name}</td>
+                    <td class="text-right">${loanBalance}</td>
+                    <td class="text-right">${loanRepayment}</td>
+                    <td class="text-right">${remarkHtml}</td>
+                </tr>`;
+                
+                tbody.append(row);
+            });
+        }
 
         var staff_id = $("#staff_id").val();
-        fetchloanComparesDetails(staff_id);
+        // fetchloanComparesDetails(staff_id); // Removed dead call to missing file
 
         $("#search").on('focus', function() {
             $("#search").select();
@@ -151,35 +271,16 @@ $loanCompares = $dbHandler->loanCompare();
 
                 $("#name").val(ui.item.label);
                 $("#staff_id").val(ui.item.value);
-                fetchloanComparesDetails(ui.item.value)
+                // fetchloanComparesDetails(ui.item.value)
                 return false;
             }
         });
 
+        /*
         function fetchloanComparesDetails(staffId) {
-            // Example AJAX call to fetch the loan balance
-            $('#overlay').fadeIn();
-            $.ajax({
-                url: 'getloanComparesDetails.php', // Adjust this to your server-side script
-                data: {
-                    staff_id: staffId
-                },
-                //dataType: 'json',
-                success: function(response) {
-                    $('#overlay').fadeOut('fast', function() {
-                        $('#loanComparesDetails').html(response); // Assuming response contains the loan balance
-
-                    });
-                },
-                error: function() {
-                    $('#overlay').fadeOut('fast', function() {
-                        console.error('Failed to fetch loanCompare Details');
-                    })
-
-                    // Handle errors here
-                }
-            });
+             // Function removed: getloanComparesDetails.php does not exist
         }
+        */
 
         function fetchLoanDetails(period) {
             $.ajax({
@@ -195,7 +296,7 @@ $loanCompares = $dbHandler->loanCompare();
                 },
                 error: function(xhr, status, error) {
                     // console.error('Failed to fetch loan balance');
-                    alert(error);
+                    Swal.fire({icon:'warning', text:error});
                 }
             });
         }
@@ -203,7 +304,7 @@ $loanCompares = $dbHandler->loanCompare();
 
         $('#selectName').on('change', function() {
             var staff_id = $(this).val();
-            fetchloanComparesDetails(staff_id);
+            // fetchloanComparesDetails(staff_id);
         });
 
 
@@ -274,13 +375,13 @@ $loanCompares = $dbHandler->loanCompare();
                     data: formData,
                     success: function(response) {
                         // Handle success
-                        alert('Form submitted successfully.');
+                        Swal.fire({icon:'warning', text:'Form submitted successfully.'});
                         $('#loanForm')[0].reset(); // Clear form
                         fetchLoanDetails(period)
                     },
                     error: function() {
                         // Handle error
-                        alert('Form submission failed.');
+                        Swal.fire({icon:'warning', text:'Form submission failed.'});
                     },
                     complete: function() {
                         // Always executed after the AJAX call completes

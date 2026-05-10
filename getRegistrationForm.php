@@ -351,7 +351,7 @@ function getAndDisplayStaffId($result, $defaultDisplay = "")
                 dataType: 'json',
                 success: function(response) {
                     if (response.exists) {
-                        alert('Staff No already exists.');
+                        Swal.fire({icon:'warning', title:'Duplicate', text:'Staff No already exists.'});
                         // Invalidate the field, e.g., by adding a visual cue or message
                         $('#staff_no').addClass('is-invalid');
                     } else {

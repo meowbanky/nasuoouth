@@ -236,7 +236,7 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
                     },
                     error: function() {
                         // Handle error
-                        alert('Form submission failed.');
+                        Swal.fire({icon:'warning', text:'Form submission failed.'});
                     },
                     complete: function() {
                         // Always executed after the AJAX call completes

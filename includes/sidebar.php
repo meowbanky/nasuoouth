@@ -45,6 +45,7 @@ function isActivePage($page)
             <i class="fas fa-exchange-alt"></i>
             Master Transaction
         </a>
+        <a href="bulksms.php" class="nav_link <?php echo isActivePage('bulksms.php'); ?>"> <i class='bx bx-broadcast nav_icon'></i> <span class="nav_name">Bulk SMS</span> </a>
         <a class="list-group-item list-group-item-action <?= isActivePage('index.php'); ?>" aria-current="page" href="index.php">
             <i class="fas fa-sign-out-alt"></i>
             Log out

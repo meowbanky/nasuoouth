@@ -129,7 +129,18 @@ $dbHandler = new DataBaseHandler();
 
             var formData = new FormData(this);
             // Show confirmation dialog
-            if (confirm('Are you sure you want to Upload ' + $('#file').val() + ' ?')) {
+            const uploadResult = await Swal.fire({
+                title: 'Confirm Upload',
+                text: "Are you sure you want to Upload " + $('#file').val() + "?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Upload',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor: '#6c757d'
+            });
+            if (!uploadResult.isConfirmed) return;
+            {
                 // Show overlay
                 $('#overlay').fadeIn();
                 try {
@@ -152,7 +163,7 @@ $dbHandler = new DataBaseHandler();
                         },
                         error: function() {
                             // Handle error
-                            alert('Form submission failed.');
+                            Swal.fire({icon:'error', title:'Error', text:'Form submission failed.'});
                         },
                         complete: function() {
                             // Always executed after the AJAX call completes

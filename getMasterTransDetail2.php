@@ -3,67 +3,6 @@ require_once('class/DataBaseHandler.php');
 
 $dbHandler = new DataBaseHandler();
 
-function fetchTransactions($conn, $periodFrom, $periodTo, $id = '')
-{
-  $queryParams = [];
-  
-  // Correlated subqueries for running totals
-  // Note: Using 'tm' alias for the inner tables
-  // Adapted to use staff_id instead of patientid/memberid based on existing schema
-  $query = "SELECT
-  tbl_personalinfo.staff_id,
-  MIN(tlb_mastertransaction.transactionid) transactionid,
-  concat(tbl_personalinfo.Lname,' , ', tbl_personalinfo.Fname,' ', ifnull( tbl_personalinfo.Mname,'')) AS namess,
-  Sum(tlb_mastertransaction.Contribution) AS Contribution,
-  (Sum(tlb_mastertransaction.loanAmount) + Sum(tlb_mastertransaction.interest)) AS loan,
-  Sum(tlb_mastertransaction.loanRepayment) AS loanrepayments,
-  Sum(tlb_mastertransaction.withdrawal) AS withrawals,
-  (Sum(tlb_mastertransaction.Contribution) + Sum(tlb_mastertransaction.loanRepayment)+ MIN(IFNULL(tbl_refund.amount,0)) ) AS total,
-  tbpayrollperiods.PayrollPeriod,
-  tlb_mastertransaction.periodid,
-  MIN(IFNULL(tbl_refund.amount,0)) AS 'refund',
-  
-  -- Running Contribution Balance (History <= Current Period)
-  (SELECT SUM(IFNULL(tm.Contribution,0)) - SUM(IFNULL(tm.withdrawal,0))
-   FROM tlb_mastertransaction tm 
-   WHERE tm.staff_id = tbl_personalinfo.staff_id 
-   AND tm.periodid <= tlb_mastertransaction.periodid
-  ) as RunningContribution,
-
-  -- Running Loan Balance (History <= Current Period)
-  (SELECT SUM(IFNULL(tm.loanAmount,0)) + SUM(IFNULL(tm.interest,0)) - SUM(IFNULL(tm.loanRepayment,0))
-   FROM tlb_mastertransaction tm 
-   WHERE tm.staff_id = tbl_personalinfo.staff_id 
-   AND tm.periodid <= tlb_mastertransaction.periodid
-  ) as RunningLoanBal
-
-  FROM
-  tbl_personalinfo
-  INNER JOIN tlb_mastertransaction ON tbl_personalinfo.staff_id = tlb_mastertransaction.staff_id
-  INNER JOIN tbpayrollperiods ON tbpayrollperiods.Periodid = tlb_mastertransaction.periodid
-  LEFT JOIN tbl_refund ON tbl_refund.staff_id = tbl_personalinfo.staff_id AND tbl_refund.periodid = tbpayrollperiods.Periodid
-  WHERE tbpayrollperiods.Periodid BETWEEN ? AND ?";
-
-  $queryParams[] = $periodFrom;
-  $queryParams[] = $periodTo;
-
-  if ($id !== '') {
-    $query .= " AND tbl_personalinfo.staff_id = ?";
-    $queryParams[] = $id;
-  }
-
-  $query .= " GROUP BY tlb_mastertransaction.periodid, tbl_personalinfo.staff_id order by tbl_personalinfo.staff_id";
-
-  try {
-      $stmt = $conn->prepare($query);
-      $stmt->execute($queryParams);
-      return $stmt->fetchAll(PDO::FETCH_ASSOC);
-  } catch(PDOException $e) {
-      // Log error in production
-      return [];
-  }
-}
-
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['deleted'])) {
     $loans = [];
@@ -99,7 +38,7 @@ if ($periodFrom === null || $periodTo === null || !is_numeric($periodFrom) || !i
 }
 
 // Fetch transaction details
-$transactionDetails = fetchTransactions($dbHandler->pdo, $periodFrom, $periodTo, $staffId);
+$transactionDetails = $dbHandler->fetchTransactionDetails($periodFrom, $periodTo, $staffId);
 
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['deleted'])) {
@@ -147,9 +86,13 @@ if (empty($transactionDetails)) {
                         </tr>
                         </thead>";
     foreach ($transactionDetails as $detail) {
-        $loanBalance = $detail['RunningLoanBal'];
+        $cumulativeLoan = $dbHandler->getBalance($detail['staff_id'], 'tlb_mastertransaction', 'loanAmount', 'loanAmount', 'periodid', $detail['periodids'], '<=');
+        $cumulativeInterest = $dbHandler->getBalance($detail['staff_id'], 'tlb_mastertransaction', 'interest', 'interest', 'periodid', $detail['periodids'], '<=');
+        $totalLoan = $cumulativeLoan + $cumulativeInterest;
+        $cumulativeRepayment = $dbHandler->getBalance($detail['staff_id'], 'tlb_mastertransaction', 'loanRepayment', 'loanRepayment', 'periodid', $detail['periodids'], '<=');
+        $loanBalance = $totalLoan - $cumulativeRepayment;
         echo "<tr>";
-        echo "<td><input type='checkbox' name='selectedMaster[]' value='{$detail['staff_id']},{$detail['periodid']}'>";
+        echo "<td><input type='checkbox' name='selectedMaster[]' value='{$detail['staff_id']},{$detail['periodids']}'>";
         echo "<td>{$detail['staff_id']}</td>";
         echo "<td>{$detail['PayrollPeriod']}</td>";
         echo "<td>{$detail['namess']}</td>";
@@ -209,7 +152,7 @@ if (empty($transactionDetails)) {
             $('#delete').click(function(e) {
                 // Check if at least one checkbox is checked
                 if ($('input[type="checkbox"]:checked').length === 0) {
-                    Swal.fire({icon:'warning', text:'Please select at least one Transactions// to delete.'});
+                    Swal.fire({icon:'warning', title:'No Selection', text:'Please select at least one transaction to delete.'});
                     return; // Stop the function if no checkboxes are checked
                 }
                 Swal.fire({

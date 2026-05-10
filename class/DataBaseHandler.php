@@ -478,6 +478,28 @@ class DatabaseHandler
             echo $e->getMessage();
         }
     }
+
+    public function getSocietyStatus($period)
+    {
+        try {
+            $sql = "SELECT 
+                        SUM(IFNULL(Contribution, 0)) as TotalContribution, 
+                        SUM(IFNULL(withdrawal, 0)) as TotalWithdrawal,
+                        (SUM(IFNULL(Contribution, 0)) - SUM(IFNULL(withdrawal, 0))) as NetContribution,
+                        (SUM(IFNULL(loanAmount, 0)) + SUM(IFNULL(interest, 0))) as TotalLoan, 
+                        SUM(IFNULL(loanRepayment, 0)) as TotalLoanRepayment,
+                        ((SUM(IFNULL(loanAmount, 0)) + SUM(IFNULL(interest, 0))) - SUM(IFNULL(loanRepayment, 0))) as LoanBalance
+                    FROM tlb_mastertransaction 
+                    WHERE periodid <= :periodid";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindParam(':periodid', $period, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
     public function deleteRows2Column($table, $column1, $value1, $column2, $value2)
     {
         try {

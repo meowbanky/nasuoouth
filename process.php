@@ -58,7 +58,26 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NASU, OOUTH - Process</title>
     <?php include "includes/header.php"; ?>
-    <!-- Additional custom CSS can go here -->
+    <!-- Select2 for searchable dropdown -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        /* Make select2 match Bootstrap styling */
+        .select2-container--default .select2-selection--single {
+            height: calc(1.5em + 0.75rem + 2px);
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            padding: 0.375rem 0.75rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 1.5;
+            color: #495057;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(1.5em + 0.75rem + 2px);
+        }
+        .select2-container { width: 100% !important; }
+    </style>
 </head>
 
 <body id="body-pd">
@@ -126,6 +145,18 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                                             <?php echo $period['PayrollPeriod']; ?></option>
                                         <?php } ?>
                                     </select>
+                                </div>
+
+                                <div class="form-group mt-3">
+                                    <label for="staff_id_filter">Process For:</label>
+                                    <select name="staff_id_filter" id="staff_id_filter" class="form-control custom-select">
+                                        <option value="ALL">All Members</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group form-check mt-3 mb-3">
+                                    <input type="checkbox" class="form-check-input" id="send_sms" name="send_sms" value="1" checked>
+                                    <label class="form-check-label" for="send_sms">Send SMS Notifications</label>
                                 </div>
 
                                 <div class="form-group">
@@ -209,6 +240,12 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 <script>
 $(document).ready(function() {
 
+    // Initialize Select2 on the member dropdown for searchability
+    $('#staff_id_filter').select2({
+        placeholder: 'All Members',
+        allowClear: false
+    });
+
     // Load contributions when period changes
     $('#PeriodID').on('change', function() {
         var periodId = $(this).val();
@@ -241,7 +278,12 @@ $(document).ready(function() {
                     var total = 0;
 
                     if (response.contributions.length > 0) {
+                        var staffSelect = $('#staff_id_filter');
+                        staffSelect.html('<option value="ALL">All Members</option>');
+                        
                         response.contributions.forEach(function(contribution) {
+                            staffSelect.append('<option value="' + contribution.staff_id + '">' + contribution.namess + ' (' + contribution.staff_id + ')</option>');
+
                             tbody += '<tr>' +
                                 '<th scope="row">' + i + '</th>' +
                                 '<td>' + contribution.staff_id + '</td>' +
@@ -271,6 +313,7 @@ $(document).ready(function() {
                     } else {
                         tbody =
                             '<tr><td colspan="6" class="text-center">No contributions found for this period</td></tr>';
+                        $('#staff_id_filter').html('<option value="ALL">All Members</option>');
                     }
 
                     $('#contributionsTableBody').html(tbody);
@@ -323,48 +366,65 @@ $(document).ready(function() {
         }
 
 
-        if (confirm('Are you sure you want to run ' + $('#period').find('option:selected').text() +
-                ' Transaction?')) {
-            // Show overlay
-            $('#overlay').fadeIn();
-            try {
+        // SweetAlert2 confirmation dialog
+        const selectedPeriodText = $('#PeriodID option:selected').text();
+        const selectedMemberText = $('#staff_id_filter option:selected').text();
 
-                var formData = $(this).serialize(); // Serializes form data for Ajax
-                $.ajax({
-                    type: 'GET',
-                    url: 'class/process_transactions.php', // Adjust if necessary
-                    data: formData,
-                    xhrFields: {
-                        onprogress: function(e) {
-                            $('#sample_1').html(e.target.responseText);
-                            console.log(e.target.responseText);
-                        }
-                    },
-                    success: function(response) {
-                        // Handle success
-                        $('#overlay').fadeOut('fast', function() {
-                            $("#statusDetails").html(response);
-                        });
+        const result = await Swal.fire({
+            title: 'Confirm Processing',
+            html: `Are you sure you want to process transactions?<br>
+                   <small class="text-muted"><strong>Period:</strong> ${selectedPeriodText}</small><br>
+                   <small class="text-muted"><strong>For:</strong> ${selectedMemberText}</small>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Process',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d'
+        });
 
-                    },
-                    error: function() {
-                        // Handle error
-                        alert('Form submission failed.');
-                    },
-                    complete: function() {
-                        // Always executed after the AJAX call completes
-                        $('#overlay').fadeOut();
+        if (!result.isConfirmed) return;
+
+        // Show overlay
+        $('#overlay').fadeIn();
+        try {
+            var formData = $(this).serialize();
+            $.ajax({
+                type: 'GET',
+                url: 'class/process_transactions.php',
+                data: formData,
+                xhrFields: {
+                    onprogress: function(e) {
+                        $('#sample_1').html(e.target.responseText);
+                        console.log(e.target.responseText);
                     }
-                });
-            } catch (error) {
-                console.error('An error occurred:', error);
-
-            }
-
-
-
+                },
+                success: function(response) {
+                    $('#overlay').fadeOut('fast', function() {
+                        $("#statusDetails").html(response);
+                    });
+                    Swal.fire({
+                        title: 'Done!',
+                        text: 'Transactions processed successfully.',
+                        icon: 'success',
+                        confirmButtonColor: '#0d6efd'
+                    });
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Form submission failed. Please try again.',
+                        icon: 'error',
+                        confirmButtonColor: '#dc3545'
+                    });
+                },
+                complete: function() {
+                    $('#overlay').fadeOut();
+                }
+            });
+        } catch (error) {
+            console.error('An error occurred:', error);
         }
-
 
     });
 })
