@@ -4,8 +4,8 @@ require_once('db_constants.php');
 
 class DatabaseHandler
 {
-    public $pdo;
-    private $options = [
+    public PDO $pdo;
+    private array $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
@@ -23,7 +23,7 @@ class DatabaseHandler
     }
 
     // Function to fetch select items
-    public function getSelectItems($tableName, $valueColumn, $displayTextColumn)
+    public function getSelectItems(string $tableName, string $valueColumn, string $displayTextColumn): array
     {
         $stmt = $this->pdo->prepare("SELECT $valueColumn, $displayTextColumn FROM $tableName");
         $stmt->execute();
@@ -32,7 +32,7 @@ class DatabaseHandler
     }
 
     // Function to fetch Balance of Any column
-    public function getBalance($staff_id, $table, $olumn, $displayColumn,  $filterColumn, $filterValue, $equality = '<=')
+    public function getBalance($staff_id, string $table, string $olumn, string $displayColumn, string $filterColumn, $filterValue, string $equality = '<='): float|int
     {
         $query = "SELECT SUM({$olumn}) as {$displayColumn}  FROM {$table} WHERE staff_id =? AND  {$filterColumn} {$equality}? GROUP BY staff_id";
         $stmt = $this->pdo->prepare($query);
@@ -47,7 +47,7 @@ class DatabaseHandler
     }
 
     // Function to fetch Balance of Any column
-    public function activeMembers($status, $staff_id, $equality = '>=')
+    public function activeMembers($status, $staff_id, string $equality = '>='): array
     {
         $stmt = $this->pdo->prepare("SELECT tbl_personalinfo.staff_id, tbl_personalinfo.Lname, tbl_personalinfo.Mname, tbl_personalinfo.Fname,MobilePhone FROM tbl_personalinfo
 	                                WHERE `Status` = ? AND staff_id {$equality} ?");
@@ -64,7 +64,7 @@ class DatabaseHandler
         return $stmt->fetchAll();
     }
     //get No of active members
-    public function countActivemembers($status, $staff_id, $equality = '>=')
+    public function countActivemembers($status, $staff_id, string $equality = '>='): array
     {
         $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM tbl_personalinfo
 	                                WHERE `Status` = ? AND staff_id {$equality} ?");
@@ -74,7 +74,7 @@ class DatabaseHandler
     }
 
     // Function to fetch select items
-    public function getLoanBalance($staff_id)
+    public function getLoanBalance($staff_id): string|float|int
     {
         $stmt = $this->pdo->prepare("SELECT (sum(tlb_mastertransaction.loanAmount) + sum(tlb_mastertransaction.interest)) - sum(tlb_mastertransaction.loanRepayment) as balance
                                         FROM tlb_mastertransaction WHERE staff_id = ?");
@@ -88,7 +88,7 @@ class DatabaseHandler
         }
     }
 
-    public function getLoanStatus($staff_id)
+    public function getLoanStatus($staff_id): string|float|int
     {
         $stmt = $this->pdo->prepare("SELECT (sum(ifnull(loanAmount,0))+sum(ifnull(interest,0))) - sum(ifnull(loanRepayment,0)) balance FROM tlb_mastertransaction WHERE staff_id  = ?");
         $stmt->execute([$staff_id]);
@@ -101,7 +101,7 @@ class DatabaseHandler
         }
     }
     // Function to fetch single Item
-    public function getSingleItem($tableName, $returnColumn, $filter, $filterValue)
+    public function getSingleItem(string $tableName, string $returnColumn, string $filter, $filterValue): string|int|float
     {
         $stmt = $this->pdo->prepare("SELECT {$returnColumn} FROM {$tableName} WHERE {$filter} = ?");
         $stmt->execute([$filterValue]);
@@ -114,7 +114,7 @@ class DatabaseHandler
         }
     }
 
-    public function fetchNames($term)
+    public function fetchNames(string $term): array
     {
         $query = $this->pdo->prepare("SELECT tbl_personalinfo.staff_id, tbl_personalinfo.Fname, tbl_personalinfo.Mname, tbl_personalinfo.Lname, tbl_personalinfo.MobilePhone FROM tbl_personalinfo WHERE (tbl_personalinfo.staff_id LIKE ? OR tbl_personalinfo.Fname LIKE ? OR tbl_personalinfo.Mname LIKE ? OR tbl_personalinfo.Lname LIKE ? OR tbl_personalinfo.MobilePhone LIKE ?) LIMIT 5");
         // Execute with the parameters in a single array
@@ -124,15 +124,15 @@ class DatabaseHandler
     }
 
 
-    public function countItems($table)
+    public function countItems(string $table): int
     {
         $sql = "SELECT COUNT(*) AS total FROM {$table}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         $result = $stmt->fetch();
-        return $result['total'];
+        return (int)$result['total'];
     }
-    public function insertLoan($staff_id, $periodId, $loanAmount, $interest)
+    public function insertLoan($staff_id, $periodId, $loanAmount, $interest): string|false
     {
         try {
             $sql = "INSERT INTO tbl_loan (staff_id, periodid, loanamount, interest) VALUES (?, ?, ?, ?)";
@@ -145,7 +145,7 @@ class DatabaseHandler
         }
     }
 
-    public function insertMasterTransaction($periodId, $staff_id, $loanId, $loanAmount, $interest)
+    public function insertMasterTransaction($periodId, $staff_id, $loanId, $loanAmount, $interest): void
     {
         try {
             $sql = "INSERT INTO tlb_mastertransaction (periodid, staff_id, loanid, loanAmount, interest) VALUES (?, ?, ?, ?, ?)";
@@ -156,7 +156,7 @@ class DatabaseHandler
             throw new PDOException("Error inserting master transaction: " . $e->getMessage());
         }
     }
-    public function fetchTransactionDetails($periodFrom, $periodTo, $staffId = '')
+    public function fetchTransactionDetails($periodFrom, $periodTo, $staffId = ''): array
     {
         // Base query
         $query = "SELECT
@@ -200,7 +200,7 @@ class DatabaseHandler
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function fetchSmsTable($period, $staffId = '')
+    public function fetchSmsTable($period, $staffId = ''): array
     {
         // Base query
         $query = "SELECT
@@ -244,18 +244,17 @@ class DatabaseHandler
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getSumWithoutFilter($table, $column)
+    public function getSumWithoutFilter(string $table, string $column): float|int
     {
-
         $query = "SELECT (SUM({$column})) AS total FROM {$table}";
         $stmt = $this->pdo->prepare($query);
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $result ? $result['total'] : 0;
+        return $result ? (float)$result['total'] : 0;
     }
 
-    public function getContributionGrandTotal($period_id = null)
+    public function getContributionGrandTotal($period_id = null): float|int
     {
         if ($period_id !== null && $period_id > 0) {
             // Query with period_id filter
@@ -277,9 +276,9 @@ class DatabaseHandler
         
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $result ? $result['total'] : 0;
+        return $result ? (float)$result['total'] : 0;
     }
-    public function checkBeforeUpload($staff_id)
+    public function checkBeforeUpload($staff_id): bool
     {
         $queryCheck = "SELECT * FROM tbl_personalinfo WHERE staff_id = :staff_id";
         $stmtCheck = $this->pdo->prepare($queryCheck);
@@ -303,7 +302,7 @@ class DatabaseHandler
     }
 
 
-    public function updateStaffIDNotFound($notIn)
+    public function updateStaffIDNotFound($notIn): bool
     {
         $queryCheck = "UPDATE tbl_contributions SET contribution = 0,loan=0,special_savings=0 WHERE staff_id IN
         (SELECT tbl_personalinfo.staff_id FROM tbl_personalinfo WHERE staff_id NOT IN ({$notIn}))";
@@ -320,73 +319,78 @@ class DatabaseHandler
 
 
 
-    public function upsertContribution($staff_id, $contributions, $loanRepayment, $specialSavings, $period_id = null)
+    public function upsertContribution($staff_id, $contributions, $loanRepayment, $specialSavings, $period_id = null): bool
     {
-        $contributions = str_replace(",", "", $contributions);
-        $loanRepayment = str_replace(",", "", $loanRepayment);
-        $specialSavings = str_replace(",", "", $specialSavings);
+        $contributions = str_replace(",", "", (string)$contributions);
+        $loanRepayment = str_replace(",", "", (string)$loanRepayment);
+        $specialSavings = str_replace(",", "", (string)$specialSavings);
 
-        if ($period_id !== null && $period_id > 0) {
-            // Check with both staff_id and period_id
-            $queryCheck = "SELECT * FROM tbl_contributions WHERE staff_id = :staff_id AND period_id = :period_id";
-            $stmtCheck = $this->pdo->prepare($queryCheck);
-            $stmtCheck->execute([':staff_id' => $staff_id, ':period_id' => $period_id]);
-            $rowCheck = $stmtCheck->fetch();
+        try {
+            if ($period_id !== null && $period_id > 0) {
+                // Check with both staff_id and period_id
+                $queryCheck = "SELECT * FROM tbl_contributions WHERE staff_id = :staff_id AND period_id = :period_id";
+                $stmtCheck = $this->pdo->prepare($queryCheck);
+                $stmtCheck->execute([':staff_id' => $staff_id, ':period_id' => $period_id]);
+                $rowCheck = $stmtCheck->fetch();
 
-            if (!$rowCheck) {
-                // Insert with period_id
-                $insertSQL = "INSERT INTO tbl_contributions (contribution, loan, staff_id, special_savings, period_id) VALUES (:contributions, :loanRepayment, :staff_id, :specialSavings, :period_id)";
-                $stmtInsert = $this->pdo->prepare($insertSQL);
-                $stmtInsert->execute([
-                    ':contributions' => $contributions,
-                    ':loanRepayment' => $loanRepayment,
-                    ':staff_id' => $staff_id,
-                    ':specialSavings' => $specialSavings,
-                    ':period_id' => $period_id
-                ]);
+                if (!$rowCheck) {
+                    // Insert with period_id
+                    $insertSQL = "INSERT INTO tbl_contributions (contribution, loan, staff_id, special_savings, period_id) VALUES (:contributions, :loanRepayment, :staff_id, :specialSavings, :period_id)";
+                    $stmtInsert = $this->pdo->prepare($insertSQL);
+                    return $stmtInsert->execute([
+                        ':contributions' => $contributions,
+                        ':loanRepayment' => $loanRepayment,
+                        ':staff_id' => $staff_id,
+                        ':specialSavings' => $specialSavings,
+                        ':period_id' => $period_id
+                    ]);
+                } else {
+                    // Update with period_id filter
+                    $updateSQL = "UPDATE tbl_contributions SET contribution = :contributions, loan = :loanRepayment, special_savings = :specialSavings WHERE staff_id = :staff_id AND period_id = :period_id";
+                    $stmtUpdate = $this->pdo->prepare($updateSQL);
+                    return $stmtUpdate->execute([
+                        ':contributions' => $contributions,
+                        ':loanRepayment' => $loanRepayment,
+                        ':specialSavings' => $specialSavings,
+                        ':staff_id' => $staff_id,
+                        ':period_id' => $period_id
+                    ]);
+                }
             } else {
-                // Update with period_id filter
-                $updateSQL = "UPDATE tbl_contributions SET contribution = :contributions, loan = :loanRepayment, special_savings = :specialSavings WHERE staff_id = :staff_id AND period_id = :period_id";
-                $stmtUpdate = $this->pdo->prepare($updateSQL);
-                $stmtUpdate->execute([
-                    ':contributions' => $contributions,
-                    ':loanRepayment' => $loanRepayment,
-                    ':specialSavings' => $specialSavings,
-                    ':staff_id' => $staff_id,
-                    ':period_id' => $period_id
-                ]);
-            }
-        } else {
-            // Original logic without period_id (for backward compatibility)
-            $queryCheck = "SELECT * FROM tbl_contributions WHERE staff_id = :staff_id";
-            $stmtCheck = $this->pdo->prepare($queryCheck);
-            $stmtCheck->execute([':staff_id' => $staff_id]);
-            $rowCheck = $stmtCheck->fetch();
+                // Original logic without period_id (for backward compatibility)
+                $queryCheck = "SELECT * FROM tbl_contributions WHERE staff_id = :staff_id";
+                $stmtCheck = $this->pdo->prepare($queryCheck);
+                $stmtCheck->execute([':staff_id' => $staff_id]);
+                $rowCheck = $stmtCheck->fetch();
 
-            if (!$rowCheck) {
-                // Insert
-                $insertSQL = "INSERT INTO tbl_contributions (contribution, loan, staff_id, special_savings) VALUES (:contributions, :loanRepayment, :staff_id, :specialSavings)";
-                $stmtInsert = $this->pdo->prepare($insertSQL);
-                $stmtInsert->execute([
-                    ':contributions' => $contributions,
-                    ':loanRepayment' => $loanRepayment,
-                    ':staff_id' => $staff_id,
-                    ':specialSavings' => $specialSavings
-                ]);
-            } else {
-                // Update
-                $updateSQL = "UPDATE tbl_contributions SET contribution = :contributions, loan = :loanRepayment, special_savings = :specialSavings WHERE staff_id = :staff_id";
-                $stmtUpdate = $this->pdo->prepare($updateSQL);
-                $stmtUpdate->execute([
-                    ':contributions' => $contributions,
-                    ':loanRepayment' => $loanRepayment,
-                    ':specialSavings' => $specialSavings,
-                    ':staff_id' => $staff_id
-                ]);
+                if (!$rowCheck) {
+                    // Insert
+                    $insertSQL = "INSERT INTO tbl_contributions (contribution, loan, staff_id, special_savings) VALUES (:contributions, :loanRepayment, :staff_id, :specialSavings)";
+                    $stmtInsert = $this->pdo->prepare($insertSQL);
+                    return $stmtInsert->execute([
+                        ':contributions' => $contributions,
+                        ':loanRepayment' => $loanRepayment,
+                        ':staff_id' => $staff_id,
+                        ':specialSavings' => $specialSavings
+                    ]);
+                } else {
+                    // Update
+                    $updateSQL = "UPDATE tbl_contributions SET contribution = :contributions, loan = :loanRepayment, special_savings = :specialSavings WHERE staff_id = :staff_id";
+                    $stmtUpdate = $this->pdo->prepare($updateSQL);
+                    return $stmtUpdate->execute([
+                        ':contributions' => $contributions,
+                        ':loanRepayment' => $loanRepayment,
+                        ':specialSavings' => $specialSavings,
+                        ':staff_id' => $staff_id
+                    ]);
+                }
             }
+        } catch (PDOException $e) {
+            error_log("Upsert contribution error: " . $e->getMessage());
+            return false;
         }
     }
-    public function setting($table, $column)
+    public function setting(string $table, string $column)
     {
         $sql = "SELECT {$column} as 'column' FROM {$table}";
         $stmt = $this->pdo->prepare($sql);
@@ -395,7 +399,7 @@ class DatabaseHandler
         return $result['column'];
     }
 
-    public function getLimitedOrderedItem($table, $orderBy, $order, $limit, $offset)
+    public function getLimitedOrderedItem(string $table, string $orderBy, string $order, int $limit, int $offset): array
     {
         $sql = "SELECT * FROM {$table} ORDER BY {$orderBy} {$order} LIMIT :limit OFFSET :offset";
         $stmt = $this->pdo->prepare($sql);
@@ -405,7 +409,7 @@ class DatabaseHandler
         return $stmt->fetchAll();
     }
     //Function to get loan details from period
-    public function getLoanDetails($periodid)
+    public function getLoanDetails($periodid): array
     {
         $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`, (tbl_loan.loanamount + tbl_loan.interest) as loanamount, 
         tbl_loan.periodid, tbl_loan.staff_id,tbl_loan.loanid FROM tbl_personalinfo INNER JOIN tbl_loan ON tbl_loan.staff_id = tbl_personalinfo.staff_id 
@@ -417,31 +421,33 @@ class DatabaseHandler
     }
 
     //Function to get contribution details
-    public function getContributionsDetails($period_id = null)
+    public function getContributionsDetails($period_id = null): array
     {
-        $sql = "SELECT tbl_personalinfo.staff_id, concat(tbl_personalinfo.Lname,' , ', tbl_personalinfo.Fname,' ', ifnull( tbl_personalinfo.Mname,'')) AS namess, tbl_contributions.contribution, 
-        tbl_contributions.loan, IFNULL(tbl_contributions.special_savings, 0) AS special_savings, (tbl_contributions.contribution + tbl_contributions.loan + IFNULL(tbl_contributions.special_savings, 0)) as total 
-        FROM tbl_contributions 
-        INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id 
-        WHERE tbl_personalinfo.status = 1";
-        
         if ($period_id !== null && $period_id > 0) {
-            $sql .= " AND tbl_contributions.period_id = :period_id";
+            // Filter by period_id if provided
+            $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`, 
+                    tbl_contributions.contribution, tbl_contributions.loan, tbl_contributions.special_savings, tbl_contributions.staff_id, tbl_contributions.id 
+                    FROM tbl_personalinfo 
+                    INNER JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id 
+                    WHERE tbl_contributions.period_id = :period_id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':period_id' => $period_id]);
+        } else {
+            // Original query if period_id is not provided
+            $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`, 
+                    tbl_contributions.contribution, tbl_contributions.loan, tbl_contributions.special_savings, tbl_contributions.staff_id, tbl_contributions.id 
+                    FROM tbl_personalinfo 
+                    INNER JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
         }
-        
-        $stmt = $this->pdo->prepare($sql);
-        
-        if ($period_id !== null && $period_id > 0) {
-            $stmt->bindParam(':period_id', $period_id, PDO::PARAM_INT);
-        }
-        
-        $stmt->execute();
+
         return $stmt->fetchAll();
     }
 
     //Delete rows from table
 
-    public function deleteRows($table, $column, $id)
+    public function deleteRows(string $table, string $column, $id): void
     {
         try {
             $sql = "DELETE FROM {$table} WHERE {$column} = :id";
@@ -452,7 +458,7 @@ class DatabaseHandler
             echo $e->getMessage();
         }
     }
-    public function getPassword($staff_id)
+    public function getPassword($staff_id): array
     {
         try {
             $sql = "SELECT PlainPassword FROM tblusers WHERE UserID = :staff_id";
@@ -462,9 +468,10 @@ class DatabaseHandler
             return $stmt->fetchAll();
         } catch (PDOException $e) {
             echo $e->getMessage();
+            return [];
         }
     }
-    public function getStatus($staff_id, $period)
+    public function getStatus($staff_id, $period): array
     {
         try {
             $sql = "SELECT sum(tlb_mastertransaction.Contribution) as Contribution, (sum(tlb_mastertransaction.loanAmount)+sum(tlb_mastertransaction.interest)) as Loan, ((sum(tlb_mastertransaction.loanAmount)+ sum(tlb_mastertransaction.interest))- sum(tlb_mastertransaction.loanRepayment)) as Loanbalance, sum(tlb_mastertransaction.withdrawal) as withdrawal FROM tlb_mastertransaction 
@@ -476,6 +483,7 @@ class DatabaseHandler
             return $stmt->fetchAll();
         } catch (PDOException $e) {
             echo $e->getMessage();
+            return [];
         }
     }
 
@@ -501,7 +509,7 @@ class DatabaseHandler
             return false;
         }
     }
-    public function deleteRows2Column($table, $column1, $value1, $column2, $value2)
+    public function deleteRows2Column(string $table, string $column1, $value1, string $column2, $value2): void
     {
         try {
             $sql = "DELETE FROM {$table} WHERE {$column1} = :column1 AND {$column2}=:column2 ";
@@ -515,7 +523,7 @@ class DatabaseHandler
     }
 
     // Function to fetch ordered items
-    public function getOrderedItem($tableName, $valueColumn, $displayTextColumn)
+    public function getOrderedItem(string $tableName, string $valueColumn, string $displayTextColumn): array
     {
         $stmt = $this->pdo->prepare("SELECT $valueColumn, $displayTextColumn FROM $tableName order by $valueColumn DESC");
         $stmt->execute();
@@ -523,7 +531,7 @@ class DatabaseHandler
         return $stmt->fetchAll();
     }
 
-    public function getMonthlyContributionsForCurrentYear($PhysicalYear)
+    public function getMonthlyContributionsForCurrentYear($PhysicalYear): array|false
     {
         try {
             //$currentYear = date('Y'); // Get the current year
@@ -538,22 +546,22 @@ class DatabaseHandler
 
             return $results;
         } catch (PDOException $e) {
-            die("Error: " . $e->getMessage());
+            error_log("Error: " . $e->getMessage());
             return false;
         }
     }
 
     //get Active members
-    public function getActiveMembersCount($column, $search, $value)
+    public function getActiveMembersCount(string $column, string $search, $value): int
     {
         $sql = "SELECT COUNT({$column}) as activeMembers FROM tbl_personalinfo WHERE $search = '{$value}'";
         $stmt = $this->pdo->query($sql);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result['activeMembers'];
+        return (int)$result['activeMembers'];
     }
 
     // Function to fetch Names - Concatenatoin
-    public function getConcate3Column($tableName, $column1, $column2, $column3, $concat, $indexName)
+    public function getConcate3Column(string $tableName, string $column1, string $column2, string $column3, string $concat, string $indexName): array
     {
         $stmt = $this->pdo->prepare("SELECT CONCAT({$indexName},' - ' ,{$column1},', ',{$column2},' ',(ifnull({$column3},' '))) as {$concat} , {$indexName} FROM $tableName WHERE status = 1 order by $indexName ASC");
         $stmt->execute();
@@ -561,7 +569,7 @@ class DatabaseHandler
         return $stmt->fetchAll();
     }
 
-    public function checkIfStaffNoExists($staffNo)
+    public function checkIfStaffNoExists($staffNo): bool
     {
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM tbl_personalinfo WHERE staff_id = :staffNo");
         $stmt->execute(['staffNo' => $staffNo]);
@@ -570,7 +578,7 @@ class DatabaseHandler
         return $count > 0;
     }
 
-    public function checkIfPeriodExists($period)
+    public function checkIfPeriodExists($period): bool
     {
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM tbpayrollperiods WHERE PayrollPeriod = :period");
         $stmt->execute(['period' => $period]);
@@ -579,7 +587,7 @@ class DatabaseHandler
         return $count > 0;
     }
 
-    public function generateRandomPassword($length = 5)
+    public function generateRandomPassword(int $length = 5): string
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
@@ -590,31 +598,29 @@ class DatabaseHandler
         return $randomPassword;
     }
 
-    public function hashPassword($password)
+    public function hashPassword(string $password): string
     {
         return password_hash($password, PASSWORD_DEFAULT);
     }
-
-    public function getContributionSettings()
+    public function getContributionSettings(): float|int|null
     {
         try {
-
             // Select the contribution setting from tbl_settings
             $query_settings_contri = "SELECT contribution FROM tbl_settings";
             $stmt = $this->pdo->query($query_settings_contri);
+            $contributions = null;
 
             if ($row_settings_contri = $stmt->fetch(PDO::FETCH_ASSOC)) {
-
                 $contributions = $row_settings_contri['contribution'];
             }
+            return $contributions;
         } catch (PDOException $e) {
-            die("Error: " . $e->getMessage());
+            error_log("Error in getContributionSettings: " . $e->getMessage());
+            return null;
         }
-
-        return $contributions;
     }
 
-    public function savePeriod($period, $insertedBy)
+    public function savePeriod($period, $insertedBy): bool|string
     {
         try {
 
@@ -640,7 +646,7 @@ class DatabaseHandler
     }
 
 
-    public function saveFormData($contributions, $plainPassword, $hashedPassword, $staffNo, $title, $firstName, $middleName, $lastName, $gender, $dob, $address, $address2, $city, $stateId, $mobilePhone, $emailAddress, $status, $nokName, $nokRelationship, $nokPhone, $nokAddress)
+    public function saveFormData($contributions, $plainPassword, $hashedPassword, $staffNo, $title, $firstName, $middleName, $lastName, $gender, $dob, $address, $address2, $city, $stateId, $mobilePhone, $emailAddress, $status, $nokName, $nokRelationship, $nokPhone, $nokAddress): void
     {
         try {
 
