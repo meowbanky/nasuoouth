@@ -1,50 +1,64 @@
 <script>
-    document.addEventListener("DOMContentLoaded", function(event) {
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle   = document.getElementById('header-toggle');
+    const nav      = document.getElementById('nav-bar');
+    const body     = document.getElementById('body-pd');
+    const header   = document.getElementById('header');
+    const backdrop = document.getElementById('nav-backdrop');
 
-        const showNavbar = (toggleId, navId, bodyId, headerId) => {
-            const toggle = document.getElementById(toggleId),
-                nav = document.getElementById(navId),
-                bodypd = document.getElementById(bodyId),
-                headerpd = document.getElementById(headerId)
+    function isMobile() { return window.innerWidth < 768; }
 
-            // Validate that all variables exist
-            if (toggle && nav && bodypd && headerpd) {
-                toggle.addEventListener('click', () => {
-                    // show navbar
-                    nav.classList.toggle('show')
-                    // change icon
-                    toggle.classList.toggle('bx-x')
-                    // add padding to body
-                    bodypd.classList.toggle('body-pd')
-                    // add padding to header
-                    headerpd.classList.toggle('body-pd')
-                })
-            }
+    function openNav() {
+        nav.classList.add('show');
+        toggle.classList.add('bx-x');
+        if (isMobile()) {
+            backdrop && backdrop.classList.add('show');
+        } else {
+            body   && body.classList.add('body-pd');
+            header && header.classList.add('body-pd');
         }
+    }
 
-        showNavbar('header-toggle', 'nav-bar', 'body-pd', 'header')
+    function closeNav() {
+        nav.classList.remove('show');
+        toggle.classList.remove('bx-x');
+        backdrop && backdrop.classList.remove('show');
+        body   && body.classList.remove('body-pd');
+        header && header.classList.remove('body-pd');
+    }
 
-        /*===== LINK ACTIVE =====*/
-        const linkColor = document.querySelectorAll('.nav_link')
-
-        function colorLink() {
-            if (linkColor) {
-                linkColor.forEach(l => l.classList.remove('active'))
-                this.classList.add('active')
-            }
-        }
-        linkColor.forEach(l => l.addEventListener('click', colorLink))
-
-        // Your code to run since DOM is loaded and ready
-    });
-
-    function displayAlert(title, position, icon) {
-        Swal.fire({
-            position: position,
-            icon: icon,
-            title: title,
-            showConfirmButton: false,
-            timer: 1500
+    if (toggle) {
+        toggle.addEventListener('click', function () {
+            nav.classList.contains('show') ? closeNav() : openNav();
         });
     }
+
+    backdrop && backdrop.addEventListener('click', closeNav);
+
+    // Close mobile nav on link click
+    document.querySelectorAll('.nav_link').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (isMobile()) closeNav();
+        });
+    });
+
+    // Re-evaluate on resize (mobile -> desktop transition)
+    window.addEventListener('resize', function () {
+        if (!isMobile()) {
+            backdrop && backdrop.classList.remove('show');
+        }
+    });
+});
+
+function displayAlert(title, position, icon) {
+    Swal.fire({
+        position: position,
+        icon: icon,
+        title: title,
+        showConfirmButton: false,
+        timer: 1500,
+        background: '#1E293B',
+        color: '#F8FAFC'
+    });
+}
 </script>
