@@ -1,219 +1,165 @@
 <?php
-//require_once('services/NotificationService.php');
-require_once __DIR__ .'/services/NotificationService.php';
-require_once __DIR__ .'/DataBaseHandler.php';
+require_once __DIR__ . '/services/NotificationService.php';
+require_once __DIR__ . '/DataBaseHandler.php';
+require_once __DIR__ . '/db_constants.php';
 
 use class\services\NotificationService;
 
-require_once __DIR__. '/db_constants.php' ; // Include the DatabaseHandler class
+class TransactionProcessor
+{
+    private PDO $pdo;
+    private NotificationService $notification;
 
-
-if (isset($_GET['PeriodID'])) {
-
-    $PeriodID = filter_input(INPUT_GET, 'PeriodID', FILTER_SANITIZE_NUMBER_INT);
-    $sendSms = isset($_GET['send_sms']) ? filter_var($_GET['send_sms'], FILTER_VALIDATE_BOOLEAN) : false;
-
-    $pdo;
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
-    // Use constants from the included file
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-    try {
-        $pdo = new PDO($dsn, DB_USER, DB_PASS,  $options);
-    } catch (\PDOException $e) {
-        throw new \PDOException($e->getMessage(), (int)$e->getCode());
+    public function __construct(PDO $pdo, NotificationService $notification)
+    {
+        $this->pdo          = $pdo;
+        $this->notification = $notification;
     }
 
-    $dbHandler = new DataBaseHandler();
-    $notification = new NotificationService($dbHandler->pdo);
-?>
-<div id="progress" style="border:1px solid #ccc; border-radius: 5px;"></div>
-<div id="information" style="width:100%"></div>
+    private function getDeductions(int $periodId, string $staffFilter): array
+    {
+        $sql = "SELECT tbl_contributions.staff_id,
+                       tbl_contributions.contribution,
+                       IFNULL(tbl_contributions.special_savings, 0) AS special_savings,
+                       tbl_contributions.loan AS contLoan
+                FROM tbl_contributions
+                INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id
+                WHERE tbl_personalinfo.Status = 1
+                AND tbl_contributions.period_id = :period_id";
 
-<?php
-    try {
-        // Create an instance of the DatabaseHandler class
-
-        $staff_id_filter = isset($_GET['staff_id_filter']) ? $_GET['staff_id_filter'] : 'ALL';
-
-        $deductionsQuery = "SELECT tbl_contributions.staff_id, tbl_contributions.contribution, IFNULL(tbl_contributions.special_savings, 0) AS special_savings, tbl_contributions.loan AS loon
-                        FROM tbl_contributions
-                        INNER JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tbl_contributions.staff_id
-                        WHERE tbl_personalinfo.Status = 1 AND tbl_contributions.period_id = :period_id";
-        
-        if ($staff_id_filter !== 'ALL' && !empty($staff_id_filter)) {
-            $deductionsQuery .= " AND tbl_contributions.staff_id = :staff_id_filter";
+        if ($staffFilter !== 'ALL' && $staffFilter !== '') {
+            $sql .= " AND tbl_contributions.staff_id = :staff_id";
         }
 
-        $deductionsStmt = $pdo->prepare($deductionsQuery);
-        $deductionsStmt->bindParam(':period_id', $PeriodID, PDO::PARAM_INT);
-        if ($staff_id_filter !== 'ALL' && !empty($staff_id_filter)) {
-            $deductionsStmt->bindParam(':staff_id_filter', $staff_id_filter, PDO::PARAM_STR);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':period_id', $periodId, PDO::PARAM_INT);
+        if ($staffFilter !== 'ALL' && $staffFilter !== '') {
+            $stmt->bindValue(':staff_id', $staffFilter, PDO::PARAM_STR);
         }
-        $deductionsStmt->execute();
-        $deductions = $deductionsStmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-        $totalTransactions = count($deductions);
-        $processedTransactions = 0;
+    // Returns the cumulative outstanding loan balance for a member across all periods.
+    // Uses COALESCE per-column so NULL interest/loanAmount values don't collapse the whole expression to NULL.
+    private function getMemberLoanBalance(string $staffId): float
+    {
+        $sql = "SELECT
+                    COALESCE(SUM(loanAmount), 0)
+                    + COALESCE(SUM(interest), 0)
+                    - COALESCE(SUM(loanRepayment), 0) AS loanBalance
+                FROM tlb_mastertransaction
+                WHERE staff_id = :staff_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':staff_id' => $staffId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (float)($result['loanBalance'] ?? 0);
+    }
 
-        foreach ($deductions as $deduction) {
-            $balancesQuery = "SELECT tbl_personalinfo.staff_id, CONCAT(tbl_personalinfo.Lname, ', ', tbl_personalinfo.Fname, ' ', IFNULL(tbl_personalinfo.Mname, '')) AS namess,
-                            SUM(tlb_mastertransaction.Contribution) AS Contribution, 
-                            IFNULL((SUM(tlb_mastertransaction.loanAmount) + SUM(tlb_mastertransaction.interest)), 0) AS Loan, 
-                            IFNULL(((SUM(tlb_mastertransaction.loanAmount) + SUM(tlb_mastertransaction.interest)) - SUM(tlb_mastertransaction.loanRepayment)), 0) AS Loanbalance,
-                            SUM(tlb_mastertransaction.withdrawal) AS withdrawal, tbl_contributions.contribution AS contContribution, tbl_contributions.loan AS contLoan
-                        FROM tlb_mastertransaction
-                        RIGHT JOIN tbl_personalinfo ON tbl_personalinfo.staff_id = tlb_mastertransaction.staff_id
-                        LEFT JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id AND tbl_contributions.period_id = :period_id
-                        WHERE tbl_personalinfo.staff_id = :staff_id
-                        GROUP BY staff_id";
-            $balancesStmt = $pdo->prepare($balancesQuery);
-            $balancesStmt->bindParam(':staff_id', $deduction['staff_id']);
-            $balancesStmt->bindParam(':period_id', $PeriodID, PDO::PARAM_INT);
-            $balancesStmt->execute();
-            $row_balances = $balancesStmt->fetch(PDO::FETCH_ASSOC);
+    private function isAlreadyProcessed(string $staffId, int $periodId): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tlb_mastertransaction
+                WHERE staff_id = :staff_id
+                AND periodid   = :periodid
+                AND Contribution > 0
+                AND completed  = 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':staff_id' => $staffId, ':periodid' => $periodId]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
 
-            $completedQuery = "SELECT tlb_mastertransaction.staff_id 
-                            FROM tlb_mastertransaction 
-                            WHERE staff_id = :staff_id 
-                            AND periodid = :periodid 
-                            AND Contribution > 0 
-                            AND completed = 1";
-            $completedStmt = $pdo->prepare($completedQuery);
-            $completedStmt->bindParam(':staff_id', $deduction['staff_id']);
-            $completedStmt->bindParam(':periodid', $PeriodID);
-            $completedStmt->execute();
-            $totalRows_completed = $completedStmt->rowCount();
+    private function insertTransaction(string $staffId, int $periodId, float $contribution, float $loanRepayment): void
+    {
+        $sql = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed)
+                VALUES (:periodid, :staff_id, :contribution, :loanRepayment, :completed)";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':periodid'      => $periodId,
+            ':staff_id'      => $staffId,
+            ':contribution'  => $contribution,
+            ':loanRepayment' => $loanRepayment,
+            ':completed'     => 1,
+        ]);
+    }
 
-            // Flag to track if transaction was processed
-            $transactionProcessed = false;
+    private function insertRefund(string $staffId, int $periodId, float $amount): void
+    {
+        $sql = "INSERT INTO tbl_refund (periodid, staff_id, amount) VALUES (:periodid, :staff_id, :amount)";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':periodid' => $periodId, ':staff_id' => $staffId, ':amount' => $amount]);
+    }
 
-            if ($totalRows_completed == 0) {
-                if (($row_balances['Loanbalance'] == 0) && ($row_balances['contLoan'] == 0)) {
-                    $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, completed) 
-                                VALUES (:periodid, :staff_id, :contribution, :completed)";
-                    $insertStmt = $pdo->prepare($insertSQL);
-                    $insertStmt->execute([
-                        ':periodid' => $PeriodID,
-                        ':staff_id' => $deduction['staff_id'],
-                        ':contribution' => ($deduction['contribution'] + $deduction['special_savings']),
-                        ':completed' => 1
-                    ]);
-                    $transactionProcessed = true;
-                } elseif (($row_balances['Loanbalance'] == 0) && ($row_balances['contLoan'] > 0)) {
-                    $refund = $row_balances['contLoan'];
-                    $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, completed) 
-                                VALUES (:periodid, :staff_id, :contribution, :completed)";
-                    $insertStmt = $pdo->prepare($insertSQL);
-                    $insertStmt->execute([
-                        ':periodid' => $PeriodID,
-                        ':staff_id' => $deduction['staff_id'],
-                        ':contribution' => ($deduction['contribution'] + $deduction['special_savings']),
-                        ':completed' => 1
-                    ]);
-                    $insertSQL_refund = "INSERT INTO tbl_refund (periodid, staff_id, amount) 
-                                        VALUES (:periodid, :staff_id, :refund)";
-                    $insertStmt_refund = $pdo->prepare($insertSQL_refund);
-                    $insertStmt_refund->execute([
-                        ':periodid' => $PeriodID,
-                        ':staff_id' => $deduction['staff_id'],
-                        ':refund' => $refund
-                    ]);
-                    $transactionProcessed = true;
-                } elseif ($row_balances['Loanbalance'] > 0) {
-                    if ($row_balances['Loanbalance'] > 0) {
-                        if ($row_balances['contLoan'] > 0) {
-                            if ($row_balances['Loanbalance'] > $row_balances['contLoan']) {
-                                $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed) 
-                            VALUES (:periodid, :staff_id, :contribution, :loanRepayment, :completed)";
-                                $insertStmt = $pdo->prepare($insertSQL);
-                                $insertStmt->execute([
-                                    ':periodid' => $PeriodID,
-                                    ':staff_id' => $deduction['staff_id'],
-                                    ':contribution' => ($deduction['contribution'] + $deduction['special_savings']),
-                                    ':loanRepayment' => $row_balances['contLoan'],
-                                    ':completed' => 1
-                                ]);
-                                $transactionProcessed = true;
-                            } elseif ($row_balances['Loanbalance'] < $row_balances['contLoan']) {
-                                $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed) 
-                            VALUES (:periodid, :staff_id, :contribution, :loanRepayment, :completed)";
-                                $insertStmt = $pdo->prepare($insertSQL);
-                                $insertStmt->execute([
-                                    ':periodid' => $PeriodID,
-                                    ':staff_id' => $deduction['staff_id'],
-                                    ':contribution' => ($deduction['contribution'] + $deduction['special_savings']),
-                                    ':loanRepayment' => $row_balances['Loanbalance'],
-                                    ':completed' => 1
-                                ]);
+    // Core rule: never repay more than the outstanding balance.
+    // Any contLoan amount above the balance becomes a refund.
+    // Negative balances (from prior data errors) are treated as fully paid.
+    private function calculateRepayment(float $loanBalance, float $contLoan): array
+    {
+        $effectiveBalance = max(0.0, $loanBalance);
+        $actualRepayment  = min($effectiveBalance, $contLoan);
+        $refund           = $contLoan - $actualRepayment;
+        return ['repayment' => $actualRepayment, 'refund' => $refund];
+    }
 
-                                $refund = ($row_balances['contLoan'] - $row_balances['Loanbalance']);
-                                $insertSQL_refund = "INSERT INTO tbl_refund (periodid, staff_id, amount) 
-                                    VALUES (:periodid, :staff_id, :refund)";
-                                $insertStmt_refund = $pdo->prepare($insertSQL_refund);
-                                $insertStmt_refund->execute([
-                                    ':periodid' => $PeriodID,
-                                    ':staff_id' => $deduction['staff_id'],
-                                    ':refund' => $refund
-                                ]);
-                                $transactionProcessed = true;
-                            } elseif ($row_balances['Loanbalance'] == $row_balances['contLoan']) {
-                                $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed) 
-                            VALUES (:periodid, :staff_id, :contribution, :loanRepayment, :completed)";
-                                $insertStmt = $pdo->prepare($insertSQL);
-                                $insertStmt->execute([
-                                    ':periodid' => $PeriodID,
-                                    ':staff_id' => $deduction['staff_id'],
-                                    ':contribution' => ($deduction['contribution'] + $deduction['special_savings']),
-                                    ':loanRepayment' => $row_balances['Loanbalance'],
-                                    ':completed' => 1
-                                ]);
-                                $transactionProcessed = true;
-                            }
-                        } elseif ($row_balances['contLoan'] == 0) {
-                            $insertSQL = "INSERT INTO tlb_mastertransaction (periodid, staff_id, Contribution, loanRepayment, completed) 
-                        VALUES (:periodid, :staff_id, :contribution, :loanRepayment, :completed)";
-                            $insertStmt = $pdo->prepare($insertSQL);
-                            $insertStmt->execute([
-                                ':periodid' => $PeriodID,
-                                ':staff_id' => $deduction['staff_id'],
-                                ':contribution' => ($deduction['contribution'] + $deduction['special_savings']),
-                                ':loanRepayment' => 0.0,
-                                ':completed' => 1
-                            ]);
-                            $transactionProcessed = true;
-                        }
-                    }
+    private function outputProgress(int $processed, int $total): void
+    {
+        if ($total === 0) {
+            return;
+        }
+        $pct = intval($processed / $total * 100) . '%';
+        echo str_repeat(' ', 1024 * 64);
+        echo '<script>
+            parent.document.getElementById("progress").innerHTML="<div style=\"width:' . $pct . ';background:linear-gradient(to bottom,rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%);text-align:center;color:white;height:35px;display:block;\">' . $pct . '</div>";
+            parent.document.getElementById("information").innerHTML="<div style=\"text-align:center;font-weight:bold\">Processing ' . $processed . ' of ' . $total . '.</div>";
+        </script>';
+        ob_flush();
+        flush();
+    }
+
+    public function process(int $periodId, string $staffFilter, bool $sendSms): void
+    {
+        $deductions = $this->getDeductions($periodId, $staffFilter);
+        $total      = count($deductions);
+
+        foreach ($deductions as $i => $deduction) {
+            $staffId      = $deduction['staff_id'];
+            $contribution = (float)$deduction['contribution'] + (float)$deduction['special_savings'];
+            $contLoan     = (float)($deduction['contLoan'] ?? 0);
+
+            if (!$this->isAlreadyProcessed($staffId, $periodId)) {
+                $loanBalance = $this->getMemberLoanBalance($staffId);
+
+                ['repayment' => $repayment, 'refund' => $refund] = $this->calculateRepayment($loanBalance, $contLoan);
+
+                $this->insertTransaction($staffId, $periodId, $contribution, $repayment);
+
+                if ($refund > 0) {
+                    $this->insertRefund($staffId, $periodId, $refund);
+                }
+
+                if ($sendSms) {
+                    $this->notification->sendTransactionNotification($staffId, $periodId);
                 }
             }
 
-            // Only send notification if transaction was successfully processed and send_sms is checked
-            if ($transactionProcessed && $sendSms) {
-                $notification->sendTransactionNotification($deduction['staff_id'], $PeriodID);
-            }
-            
-            // Increment counter for all transactions processed (whether new or already existed)
-            $processedTransactions++;
-
-            // Calculate progress percentage
-            $progressPercentage = intval($processedTransactions / $totalTransactions * 100) . "%";
-
-
-            // Output the progress percentage
-
-            // echo "Processing... " . number_format($progressPercentage, 2) . "% complete.<br>";
-            // Javascript for updating the progress bar and information
-            echo str_repeat(' ', 1024 * 64);
-            echo '<script>
-					    parent.document.getElementById("progress").innerHTML="<div style=\"width:' . $progressPercentage . ';background:linear-gradient(to bottom, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%); text-align:center;color:white;height:35px;display:block;\">' . $progressPercentage . '</div>";
-					    parent.document.getElementById("information").innerHTML="<div style=\"text-align:center; font-weight:bold\">Processing ' . $processedTransactions . ' of ' . $totalTransactions . ' is processed.</div>";</script>';
-
-            ob_flush();
-            flush();
+            $this->outputProgress($i + 1, $total);
         }
+    }
+}
+
+if (isset($_GET['PeriodID'])) {
+    $periodId    = (int)filter_input(INPUT_GET, 'PeriodID', FILTER_SANITIZE_NUMBER_INT);
+    $staffFilter = $_GET['staff_id_filter'] ?? 'ALL';
+    $sendSms     = filter_var($_GET['send_sms'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+    $dbHandler    = new DataBaseHandler();
+    $notification = new NotificationService($dbHandler->pdo);
+    ?>
+<div id="progress" style="border:1px solid #ccc; border-radius: 5px;"></div>
+<div id="information" style="width:100%"></div>
+<?php
+    try {
+        $processor = new TransactionProcessor($dbHandler->pdo, $notification);
+        $processor->process($periodId, $staffFilter, $sendSms);
     } catch (PDOException $e) {
         echo "Error: " . $e->getMessage();
     }

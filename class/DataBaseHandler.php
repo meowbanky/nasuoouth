@@ -425,18 +425,20 @@ class DatabaseHandler
     {
         if ($period_id !== null && $period_id > 0) {
             // Filter by period_id if provided
-            $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`, 
-                    tbl_contributions.contribution, tbl_contributions.loan, tbl_contributions.special_savings, tbl_contributions.staff_id, tbl_contributions.id 
-                    FROM tbl_personalinfo 
-                    INNER JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id 
+            $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`,
+                    tbl_contributions.contribution, tbl_contributions.loan, tbl_contributions.special_savings, tbl_contributions.staff_id, tbl_contributions.cont_id as id,
+                    (tbl_contributions.contribution + tbl_contributions.loan + tbl_contributions.special_savings) AS total
+                    FROM tbl_personalinfo
+                    INNER JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id
                     WHERE tbl_contributions.period_id = :period_id";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':period_id' => $period_id]);
         } else {
             // Original query if period_id is not provided
-            $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`, 
-                    tbl_contributions.contribution, tbl_contributions.loan, tbl_contributions.special_savings, tbl_contributions.staff_id, tbl_contributions.id 
-                    FROM tbl_personalinfo 
+            $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`,
+                    tbl_contributions.contribution, tbl_contributions.loan, tbl_contributions.special_savings, tbl_contributions.staff_id, tbl_contributions.id,
+                    (tbl_contributions.contribution + tbl_contributions.loan + tbl_contributions.special_savings) AS total
+                    FROM tbl_personalinfo
                     INNER JOIN tbl_contributions ON tbl_contributions.staff_id = tbl_personalinfo.staff_id";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();

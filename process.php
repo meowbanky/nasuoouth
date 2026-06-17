@@ -191,7 +191,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                                         <tr>
                                             <th scope="row"><?php echo $i; ?></th>
                                             <td><?php echo $contribution['staff_id']; ?></td>
-                                            <td><?php echo $contribution['namess']; ?></td>
+                                            <td><?php echo $contribution['name']; ?></td>
                                             <td class="text-right">
                                                 ₦<?php echo number_format($contribution['contribution']); ?></td>
                                             <td class="text-right">₦<?php echo number_format($contribution['loan']); ?>
@@ -282,12 +282,12 @@ $(document).ready(function() {
                         staffSelect.html('<option value="ALL">All Members</option>');
                         
                         response.contributions.forEach(function(contribution) {
-                            staffSelect.append('<option value="' + contribution.staff_id + '">' + contribution.namess + ' (' + contribution.staff_id + ')</option>');
+                            staffSelect.append('<option value="' + contribution.staff_id + '">' + contribution.name + ' (' + contribution.staff_id + ')</option>');
 
                             tbody += '<tr>' +
                                 '<th scope="row">' + i + '</th>' +
                                 '<td>' + contribution.staff_id + '</td>' +
-                                '<td>' + contribution.namess + '</td>' +
+                                '<td>' + contribution.name + '</td>' +
                                 '<td class="text-right">₦' + parseFloat(contribution
                                     .contribution).toLocaleString('en-US') + '</td>' +
                                 '<td class="text-right">₦' + parseFloat(contribution.loan)
