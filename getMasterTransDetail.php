@@ -66,25 +66,16 @@ function fetchTransactions($conn, $periodFrom, $periodTo, $id = '')
 
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['deleted'])) {
-    $loans = [];
-    // Assuming you've sanitized and validated your inputs
     $selectedMasters = $_GET['selectedMaster'] ?? [];
 
-
-    // Delete selected loans
     foreach ($selectedMasters as $selectedMaster) {
         $splittedMaster = explode(",", $selectedMaster);
-        $staff_id =  $splittedMaster[0];
-        $periodid =  $splittedMaster[1];
+        $staff_id = $splittedMaster[0];
+        $periodid = $splittedMaster[1];
 
-        $dbHandler->deleteRows2Column("tlb_mastertransaction", "periodid", intval($periodid), "staff_id", intval($staff_id)); // Implement this method in your class
-
-        $dbHandler->deleteRows2Column("tbl_loan", "periodid", intval($periodid), "staff_id", intval($staff_id)); // Implement this method in your class
+        $dbHandler->deleteRows2Column("tlb_mastertransaction", "periodid", intval($periodid), "staff_id", intval($staff_id));
+        $dbHandler->deleteRows2Column("tbl_refund", "periodid", intval($periodid), "staff_id", intval($staff_id));
     }
-
-
-
-    //   header("Location: " . $_SERVER['PHP_SELF']); // Optional: Redirect to prevent form resubmission
 }
 
 
@@ -101,20 +92,6 @@ if ($periodFrom === null || $periodTo === null || !is_numeric($periodFrom) || !i
 // Fetch transaction details
 $transactionDetails = fetchTransactions($dbHandler->pdo, $periodFrom, $periodTo, $staffId);
 
-
-if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['deleted'])) {
-    $loans = [];
-    // Assuming you've sanitized and validated your inputs
-    $selectedMasters = $_GET['selectedMaster'] ?? [];
-
-    echo $selectedMasters;
-
-    // Delete selected loans
-    foreach ($selectedMasters as $selectedMaster) {
-        echo 'Deleting ' . $selectedMaster;
-        // $dbHandler->deleteRows2Column("tlb_mastertransaction", "periodid", intval($selectedMaster), "staff_id",); // Implement this method in your class
-    }
-}
 
 // Check if transaction details are available
 if (empty($transactionDetails)) {
