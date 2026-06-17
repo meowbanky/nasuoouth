@@ -35,12 +35,10 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
 
     <?php include "includes/sidebar2.php"; ?>
 
-    <div class="container-fluid top-margin">
-        <div class="row">
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Society Financial Status</h5>
+    <main class="top-margin">
+                <div class="card">
+                    <div class="card-header">
+                        Society Financial Status
                     </div>
                     <div class="card-body">
                         <form id="societyStatusForm">
@@ -71,14 +69,12 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
                 </div>
 
                 <div id="statusDetails" class="mt-4">
-                    <div class="alert alert-light border text-center p-5">
-                        <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
-                        <p class="text-muted">Select a period and click "Query Status" to view the society's financial summary.</p>
+                    <div class="text-center p-5" style="color:var(--text-muted);">
+                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                        <p>Select a period and click "Query Status" to view the society's financial summary.</p>
                     </div>
                 </div>
-            </main>
-        </div>
-    </div>
+    </main>
 
     <?php include("includes/nav_script.php"); ?>
 

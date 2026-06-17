@@ -82,18 +82,19 @@ $balance = $notificationService->getSMSBalance();
             width: 100%;
             max-height: 200px;
             overflow-y: auto;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 0.375rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
             display: none;
         }
         .search-item {
             padding: 10px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
         }
-        .search-item:hover { background-color: #f8f9fa; }
+        .search-item:hover { background: rgba(34,197,94,0.08); }
         .search-item:last-child { border-bottom: none; }
     </style>
 </head>
@@ -102,15 +103,12 @@ $balance = $notificationService->getSMSBalance();
     
     <?php include "includes/sidebar2.php"; ?>
 
-    <div class="container-fluid">
-        <div class="row">
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mt-5 pt-3">
-               
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Bulk SMS Center</h1>
+    <main class="top-margin">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3" style="border-bottom:1px solid var(--border-light);">
+                    <h5 style="font-family:var(--font-mono);font-weight:700;margin:0;">Bulk SMS Center</h5>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
-                             <button type="button" class="btn btn-sm btn-outline-secondary">Balance: ₦<?php echo number_format($balance, 2); ?></button>
+                             <button type="button" class="btn btn-sm" style="border:1px solid var(--border-light);color:var(--text-secondary);">Balance: ₦<?php echo number_format($balance, 2); ?></button>
                         </div>
                     </div>
                 </div>
@@ -121,7 +119,7 @@ $balance = $notificationService->getSMSBalance();
                         
                         <!-- Search & Add -->
                         <div class="card">
-                            <div class="card-header bg-white py-3">
+                            <div class="card-header py-3">
                                 <h5 class="mb-0"><i class='bx bx-user-plus'></i> Search & Add Recipients</h5>
                             </div>
                             <div class="card-body">
@@ -134,7 +132,7 @@ $balance = $notificationService->getSMSBalance();
 
                         <!-- Compose Message -->
                          <div class="card">
-                            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0"><i class='bx bx-message-edit'></i> Compose Message</h5>
                             </div>
                             <div class="card-body">
@@ -171,27 +169,27 @@ $balance = $notificationService->getSMSBalance();
                     <!-- Sidebar / Info / History -->
                     <div class="col-lg-4">
                         <div class="card">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0 text-muted">Usage Guidelines</h6>
+                            <div class="card-header">
+                                <h6 class="mb-0" style="color:var(--text-muted);">Usage Guidelines</h6>
                             </div>
                             <div class="card-body">
-                                <ul class="list-unstyled mb-0 small">
-                                    <li class="mb-2"><i class='bx bx-check-circle text-success'></i> Numbers are automatically formatted.</li>
-                                    <li class="mb-2"><i class='bx bx-check-circle text-success'></i> Separate multiple numbers with commas.</li>
-                                    <li class="mb-2"><i class='bx bx-error text-warning'></i> Avoid special characters.</li>
-                                    <li><i class='bx bx-info-circle text-info'></i> Sender ID is fixed.</li>
+                                <ul class="list-unstyled mb-0 small" style="color:var(--text-secondary);">
+                                    <li class="mb-2"><i class='bx bx-check-circle' style="color:var(--accent);"></i> Numbers are automatically formatted.</li>
+                                    <li class="mb-2"><i class='bx bx-check-circle' style="color:var(--accent);"></i> Separate multiple numbers with commas.</li>
+                                    <li class="mb-2"><i class='bx bx-error' style="color:var(--accent-amber);"></i> Avoid special characters.</li>
+                                    <li><i class='bx bx-info-circle' style="color:var(--accent-blue);"></i> Sender ID is fixed.</li>
                                 </ul>
                             </div>
                         </div>
 
                         <div class="card">
-                             <div class="card-header bg-white">
+                             <div class="card-header">
                                 <h5 class="mb-0"><i class='bx bx-history'></i> Recent History</h5>
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0" style="font-size: 0.85rem;">
-                                        <thead class="table-light">
+                                        <thead>
                                             <tr>
                                                 <th>Receiver</th>
                                                 <th>Message</th>
@@ -246,7 +244,7 @@ $balance = $notificationService->getSMSBalance();
                                 </div>
                             </div>
                              <?php if ($totalPages > 1): ?>
-                            <div class="card-footer bg-white d-flex justify-content-between">
+                            <div class="card-footer d-flex justify-content-between" style="background:var(--bg-sidebar);border-top:1px solid var(--border-light);">
                                 <?php if ($page > 1): ?>
                                     <a href="?page=<?php echo $page - 1; ?>" class="btn btn-sm btn-outline-secondary">Prev</a>
                                 <?php else: ?>
@@ -262,11 +260,8 @@ $balance = $notificationService->getSMSBalance();
                     </div>
                 </div>
 
-            </main>
-        </div>
-    </div>
+    </main>
 
-    <!-- Scripts -->
     <?php include("includes/nav_script.php"); ?>
     
     <script>

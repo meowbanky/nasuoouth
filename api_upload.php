@@ -43,7 +43,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 
-<body class="bg-gray-100">
+<body id="body-pd">
     <?php include('includes/header_nav.php'); ?>
     <?php include "includes/sidebar2.php"; ?>
     <!-- Loading Modal -->
@@ -297,6 +297,44 @@ require_once('classes/OOUTHSalaryAPIClient.php');
     </div>
 
     <style>
+    /* ── Dark overrides for Tailwind utilities ─────── */
+    .bg-white, .bg-gray-100, .bg-gray-50 { background: var(--bg-card) !important; }
+    .bg-gray-200 { background: var(--bg-sidebar) !important; }
+    .bg-gray-800 { background: var(--bg-body) !important; }
+    .text-gray-900, .text-gray-800 { color: var(--text-primary) !important; }
+    .text-gray-700, .text-gray-600 { color: var(--text-secondary) !important; }
+    .text-gray-500, .text-gray-400 { color: var(--text-muted) !important; }
+    .border-gray-200, .border-gray-300 { border-color: var(--border-light) !important; }
+    .divide-gray-200 > * + * { border-color: var(--border) !important; }
+    .bg-indigo-50, .bg-blue-50 { background: rgba(99,102,241,0.1) !important; }
+    .bg-green-50 { background: rgba(34,197,94,0.08) !important; }
+    .bg-red-50 { background: rgba(239,68,68,0.08) !important; }
+    .bg-yellow-50, .bg-yellow-100 { background: rgba(245,158,11,0.1) !important; }
+    .text-indigo-600, .text-blue-800 { color: var(--accent-blue) !important; }
+    .text-green-600, .text-green-500, .text-green-800 { color: var(--accent) !important; }
+    .text-yellow-800, .text-yellow-900, .text-yellow-700 { color: var(--accent-amber) !important; }
+    .text-red-800, .text-red-700, .text-red-500 { color: var(--accent-red) !important; }
+    .border-indigo-200, .border-blue-200 { border-color: rgba(99,102,241,0.3) !important; }
+    .border-green-200 { border-color: rgba(34,197,94,0.3) !important; }
+    .border-yellow-200 { border-color: rgba(245,158,11,0.3) !important; }
+    .border-red-200 { border-color: rgba(239,68,68,0.3) !important; }
+    .bg-blue-200 { background: rgba(59,130,246,0.2) !important; }
+    .bg-blue-600 { background: var(--accent-blue) !important; }
+    .bg-green-600, .bg-green-500 { background: var(--accent) !important; }
+    .hover\:bg-gray-50:hover, .hover\:bg-gray-300:hover { background: rgba(255,255,255,0.05) !important; }
+    .hover\:bg-gray-300:hover { background: var(--bg-sidebar) !important; }
+    .shadow-lg, .shadow-2xl { box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important; }
+    .rounded-xl, .rounded-2xl { border-radius: 0.75rem !important; }
+    input.border-gray-300 { background: var(--bg-input) !important; color: var(--text-primary) !important; }
+    input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(34,197,94,0.15) !important; }
+    select.border-gray-300 { background: var(--bg-input) !important; color: var(--text-primary) !important; }
+    select option { background: var(--bg-card); color: var(--text-primary); }
+    /* Keep the gradient header as-is — purple/indigo works on dark */
+    /* Loading modal dark override */
+    #loadingModal > div { background: var(--bg-card) !important; }
+    #modalTitle { color: var(--text-primary) !important; }
+    #modalMessage { color: var(--text-secondary) !important; }
+
     .animate-spin {
         animation: spin 1s linear infinite;
     }

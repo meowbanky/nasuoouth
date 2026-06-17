@@ -41,10 +41,7 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
 
 
     <?php include "includes/sidebar2.php"; ?>
-    <div class="container-fluid top-margin">
-        <!-- Sidebar/User Info and Form Section -->
-        <div class="row">
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+    <main class="top-margin">
 
                 <?php if (isset($_SESSION['success_message'])) : ?>
                     <div class="alert alert-success">
@@ -126,13 +123,8 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
                     </div>
 
                 </div>
-            </main>
-        </div>
-    </div>
-    </div>
-    </div>
+    </main>
 
-    <!-- Bootstrap and your custom scripts here -->
     <?php include("includes/nav_script.php"); ?>
 </body>
 
@@ -223,9 +215,9 @@ $periods = $dbHandler->getOrderedItem('tbpayrollperiods', 'Periodid', 'PayrollPe
             $.each(data, function(index, item) {
                 var remarkHtml = '';
                 if (item.status === 'Reduce Repayment') {
-                    remarkHtml = '<font color="#FF0000"> Reduce Loan Repayment </font>';
+                    remarkHtml = '<span style="color:var(--accent-red);font-weight:600;">Reduce Repayment</span>';
                 } else {
-                    remarkHtml = '<font color="#00FF00"> Normal </font>';
+                    remarkHtml = '<span style="color:var(--accent);font-weight:600;">Normal</span>';
                 }
 
                 // Format numbers - consistent with loanContri_Compare.php

@@ -76,146 +76,129 @@ foreach ($previousYears as $previousYear) {
     </div>
 
     <?php include "includes/sidebar2.php"; ?>
-    <div class="container-fluid">
-        <div class="row flex-nowrap">
-
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div
-                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Dashboard</h1>
-                </div>
-
-                <!-- Dashboard content here -->
-                <p>Welcome to your dashboard, <?php echo htmlspecialchars($_SESSION['FirstName'] ?? ''); ?>!</p>
-                <!-- You can add more dashboard widgets or content here -->
-                <!-- Dashboard Widgets -->
-                <div class="row">
-                    <!-- Summary Card Example -->
-                    <div class="col-md-4 mb-4">
-                        <div class="card text-white bg-primary mb-3" style="max-width: 18rem;">
-                            <div class="card-header">Members</div>
-                            <div class="card-body">
-                                <h5 class="card-title">Total Active Members</h5>
-                                <p class="card-text"><?php echo htmlspecialchars($activeMemberCount) ?></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Another Summary Card Example -->
-                    <div class="col-md-4 mb-4">
-                        <div class="card text-white bg-success mb-3" style="max-width: 18rem;">
-                            <div class="card-header">Contributions</div>
-                            <div class="card-body">
-                                <h5 class="card-title">Total Contributions</h5>
-                                <p class="card-text">₦ <?php echo number_format($totalWelfare) ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card text-white bg-warning mb-3" style="max-width: 18rem;">
-                            <div class="card-header">Outstanding Loan</div>
-                            <div class="card-body">
-                                <h5 class="card-title">Active Loans</h5>
-                                <p class="card-text"><?php echo number_format($totalOutstanding); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Yet Another Summary Card Example -->
-                    <div class="col-md-4 mb-4">
-                        <div class="card text-white bg-warning mb-3" style="max-width: 18rem;">
-                            <div class="card-header">Male Gender</div>
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <symbol id="bx--male" viewBox="0 0 24 24">
-                                        <circle cx="12" cy="4" r="2" fill="currentColor" />
-                                        <path fill="currentColor"
-                                            d="M15 7H9a1 1 0 0 0-1 1v7h2v7h4v-7h2V8a1 1 0 0 0-1-1" />
-                                    </symbol><i class='bx bx-male nav_icon'></i>
-                                </h5>
-                                <p class="card-text"><?= $maleCount ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card text-white bg-success mb-3" style="max-width: 18rem;">
-                            <div class="card-header">Female Gender</div>
-                            <div class="card-body">
-                                <h5 class="card-title"><i class='bx bx-female nav_icon'></i></h5>
-                                <p class="card-text"><?= $feMaleCount ?></p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Add more widgets or content here -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card-header">Current Year - <?php echo $currentYearDate; ?></div>
-                        <canvas id="contributionChartCur" width="400" height="200"></canvas>
-
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card-header">Previous Year - <?php echo $previousYearDate; ?></div>
-                        <canvas id="contributionChartPre" width="400" height="200"></canvas>
-
-                    </div>
-                </div>
-
-            </main>
+    <main class="top-margin">
+        <div class="d-flex justify-content-between align-items-center pb-2 mb-3" style="border-bottom:1px solid var(--border-light);">
+            <h5 style="font-family:var(--font-mono);font-weight:700;margin:0;">Dashboard</h5>
         </div>
 
-    </div>
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card h-100">
+                    <div class="card-body" style="padding:1rem;">
+                        <div style="color:var(--accent-blue);font-size:1.4rem;margin-bottom:0.35rem;"><i class='bx bx-group'></i></div>
+                        <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-mono);"><?= htmlspecialchars($activeMemberCount) ?></div>
+                        <div style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem;">Active Members</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card h-100">
+                    <div class="card-body" style="padding:1rem;">
+                        <div style="color:var(--accent);font-size:1.4rem;margin-bottom:0.35rem;"><i class='bx bx-donate-heart'></i></div>
+                        <div style="font-size:1rem;font-weight:700;font-family:var(--font-mono);">₦<?= number_format($totalWelfare) ?></div>
+                        <div style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem;">Contributions</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card h-100">
+                    <div class="card-body" style="padding:1rem;">
+                        <div style="color:var(--accent-amber);font-size:1.4rem;margin-bottom:0.35rem;"><i class='bx bx-money'></i></div>
+                        <div style="font-size:1rem;font-weight:700;font-family:var(--font-mono);">₦<?= number_format($totalOutstanding) ?></div>
+                        <div style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem;">Outstanding Loans</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card h-100">
+                    <div class="card-body" style="padding:1rem;">
+                        <div style="color:var(--accent-blue);font-size:1.4rem;margin-bottom:0.35rem;"><i class='bx bx-male'></i></div>
+                        <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-mono);"><?= $maleCount ?></div>
+                        <div style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem;">Male</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card h-100">
+                    <div class="card-body" style="padding:1rem;">
+                        <div style="color:#F472B6;font-size:1.4rem;margin-bottom:0.35rem;"><i class='bx bx-female'></i></div>
+                        <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-mono);"><?= $feMaleCount ?></div>
+                        <div style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem;">Female</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Monthly Contributions — <?php echo $currentYearDate; ?></div>
+                    <div class="card-body"><canvas id="contributionChartCur"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Monthly Contributions — <?php echo $previousYearDate; ?></div>
+                    <div class="card-body"><canvas id="contributionChartPre"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </main>
 
 
 </body>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const ctxCur = document.getElementById('contributionChartCur').getContext('2d');
-const contributionChartCur = new Chart(ctxCur, {
-    type: 'line',
-    data: {
-        labels: <?php echo json_encode($labels_curr); ?>, // Replace these with your actual data labels
-        datasets: [{
-            label: 'Monthly Contributions',
-            data: <?php echo json_encode($data_curr); ?>, // Replace these with your actual data points
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1
-        }]
+const darkChartDefaults = {
+    color: '#94A3B8',
+    borderColor: '#334155',
+    backgroundColor: 'rgba(34,197,94,0.08)',
+    scales: {
+        x: { ticks: { color: '#64748B' }, grid: { color: '#1E293B' } },
+        y: { beginAtZero: true, ticks: { color: '#64748B' }, grid: { color: '#1E293B' } }
     },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
-</script>
+    plugins: { legend: { labels: { color: '#94A3B8' } } }
+};
 
-<script>
-const ctxPre = document.getElementById('contributionChartPre').getContext('2d');
-const contributionChartPre = new Chart(ctxPre, {
+const ctxCur = document.getElementById('contributionChartCur').getContext('2d');
+new Chart(ctxCur, {
     type: 'line',
     data: {
-        labels: <?php echo json_encode($labels_pre); ?>, // Replace these with your actual data labels
+        labels: <?php echo json_encode($labels_curr); ?>,
         datasets: [{
-            label: 'Monthly Contributions',
-            data: <?php echo json_encode($data_pre); ?>, // Replace these with your actual data points
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1
+            label: 'Contributions',
+            data: <?php echo json_encode($data_curr); ?>,
+            backgroundColor: 'rgba(34,197,94,0.12)',
+            borderColor: '#22C55E',
+            borderWidth: 2,
+            pointBackgroundColor: '#22C55E',
+            tension: 0.3,
+            fill: true
         }]
     },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
+    options: { ...darkChartDefaults }
+});
+
+const ctxPre = document.getElementById('contributionChartPre').getContext('2d');
+new Chart(ctxPre, {
+    type: 'line',
+    data: {
+        labels: <?php echo json_encode($labels_pre); ?>,
+        datasets: [{
+            label: 'Contributions',
+            data: <?php echo json_encode($data_pre); ?>,
+            backgroundColor: 'rgba(59,130,246,0.12)',
+            borderColor: '#3B82F6',
+            borderWidth: 2,
+            pointBackgroundColor: '#3B82F6',
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: { ...darkChartDefaults }
 });
 </script>
 <?php include("includes/nav_script.php"); ?>

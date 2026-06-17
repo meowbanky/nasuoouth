@@ -53,12 +53,7 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
     <?php include "includes/sidebar2.php"; ?>
 
 
-    <div class="container-fluid top-margin">
-        <!-- Sidebar/User Info and Form Section -->
-        <div class="row">
-
-
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+    <main class="top-margin">
 
                 <?php if (isset($_SESSION['success_message'])) : ?>
                     <div class="alert alert-success">
@@ -141,13 +136,7 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
                     <!-- Additional form fields here -->
 
                 </div>
-            </main>
-        </div>
-    </div>
-    </div>
-    </div>
-
-    <!-- Bootstrap and your custom scripts here -->
+    </main>
 
 </body>
 

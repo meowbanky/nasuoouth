@@ -61,23 +61,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     <!-- Select2 for searchable dropdown -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <style>
-        /* Make select2 match Bootstrap styling */
-        .select2-container--default .select2-selection--single {
-            height: calc(1.5em + 0.75rem + 2px);
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-            padding: 0.375rem 0.75rem;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 1.5;
-            color: #495057;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: calc(1.5em + 0.75rem + 2px);
-        }
-        .select2-container { width: 100% !important; }
-    </style>
 </head>
 
 <body id="body-pd">
@@ -106,13 +89,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     <?php include "includes/sidebar2.php"; ?>
 
 
-    <div class="container-fluid top-margin">
-
-        <div class="container-fluid">
-            <!-- Sidebar/User Info and Form Section -->
-            <div class="row">
-
-                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+    <main class="top-margin">
 
                     <?php if (isset($_SESSION['success_message'])) : ?>
                     <div class="alert alert-success">
@@ -226,13 +203,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                         </div>
 
                     </div>
-                </main>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Bootstrap and your custom scripts here -->
+    </main>
 
 </body>
 <?php include("includes/nav_script.php"); ?>

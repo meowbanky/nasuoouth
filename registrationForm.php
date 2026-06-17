@@ -39,11 +39,7 @@ $states = $dbHandler->getSelectItems('state_nigeria', 'stateid', 'state');
     <?php include "includes/sidebar2.php"; ?>
 
 
-    <div class="height-100 bg-light top-margin">
-        <!-- Sidebar/User Info and Form Section -->
-
-
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 m-t-2">
+    <main class="top-margin">
 
             <div class="card">
                 <h5 class="card-header">Registration Form</h5>
@@ -61,12 +57,7 @@ $states = $dbHandler->getSelectItems('state_nigeria', 'stateid', 'state');
                     </div>
 
                 </div>
-        </main>
-    </div>
-
-
-
-    <!-- Bootstrap and your custom scripts here -->
+    </main>
 
 </body>
 

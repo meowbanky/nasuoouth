@@ -50,18 +50,7 @@ $periods = $dbHandler->getLimitedOrderedItem('tbpayrollperiods', 'Periodid', 'DE
 
 
     <?php include "includes/sidebar2.php"; ?>
-    <div class="container-fluid top-margin">
-        <!-- Sidebar/User Info and Form Section -->
-        <div class="row">
-            <!-- Sidebar/User Info -->
-
-
-            <!-- More links can be added here -->
-
-
-
-
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+    <main class="top-margin">
 
                 <?php if (isset($_SESSION['success_message'])) : ?>
                     <div class="alert alert-success">
@@ -126,13 +115,7 @@ $periods = $dbHandler->getLimitedOrderedItem('tbpayrollperiods', 'Periodid', 'DE
                     </div>
 
                 </div>
-            </main>
-        </div>
-    </div>
-    </div>
-    </div>
-
-    <!-- Bootstrap and your custom scripts here -->
+    </main>
 
 </body>
 <?php include("includes/nav_script.php"); ?>
