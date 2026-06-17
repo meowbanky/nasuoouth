@@ -297,6 +297,10 @@ require_once('classes/OOUTHSalaryAPIClient.php');
     </div>
 
     <style>
+    /* ── Force nav components above Tailwind ───────── */
+    #nav-bar   { z-index: 110 !important; }
+    #header    { z-index: 120 !important; }
+    #nav-backdrop { z-index: 100 !important; }
     /* ── Dark overrides for Tailwind utilities ─────── */
     .bg-white, .bg-gray-100, .bg-gray-50 { background: var(--bg-card) !important; }
     .bg-gray-200 { background: var(--bg-sidebar) !important; }
@@ -406,6 +410,7 @@ require_once('classes/OOUTHSalaryAPIClient.php');
     }
     </style>
 
+    <?php include("includes/nav_script.php"); ?>
     <script>
     // Global variables
     let apiData = [];

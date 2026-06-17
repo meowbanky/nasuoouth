@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['deleted'])) {
                         <th scope="col">Staff No.</th>
                         <th scope="col">Name</th>
                         <th scope="col" class="text-right">Loan Amount</th>
+                        <th scope="col" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,6 +75,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['deleted'])) {
                             <td><?php echo $loan['staff_id']; ?></td>
                             <td><?php echo $loan['name']; ?></td>
                             <td class="text-right">₦<?php echo number_format($loan['loanamount']); ?></td>
+                            <td class="text-center">
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-primary edit-loan-btn"
+                                    data-loanid="<?php echo $loan['loanid']; ?>"
+                                    data-name="<?php echo htmlspecialchars($loan['name']); ?>"
+                                    data-staff_id="<?php echo $loan['staff_id']; ?>"
+                                    data-principal="<?php echo $loan['loan_principal']; ?>"
+                                    data-interest="<?php echo $loan['loan_interest']; ?>">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
                         </tr>
                     <?php $i++;
                         $total += $loan['loanamount'];

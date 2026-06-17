@@ -53,6 +53,55 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
     <?php include "includes/sidebar2.php"; ?>
 
 
+    <!-- Edit Loan Modal -->
+    <div class="modal fade" id="editLoanModal" tabindex="-1" aria-labelledby="editLoanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editLoanModalLabel">
+                        <i class="fas fa-edit" style="color:var(--accent-blue);margin-right:0.5rem;"></i>Edit Loan
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editLoanId">
+                    <div class="form-group mb-3">
+                        <label style="font-size:0.8rem;color:var(--text-muted);">Staff Name</label>
+                        <input type="text" class="form-control" id="editLoanName" readonly>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label style="font-size:0.8rem;color:var(--text-muted);">Staff No.</label>
+                        <input type="text" class="form-control" id="editLoanStaff" readonly>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label style="font-size:0.8rem;color:var(--text-muted);">Amount Granted (Principal)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₦</span>
+                            <input type="number" class="form-control" id="editAmountGranted" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label style="font-size:0.8rem;color:var(--text-muted);">Interest</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₦</span>
+                            <input type="number" class="form-control" id="editInterest" readonly>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-active);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:0.75rem 1rem;font-family:var(--font-mono);font-size:0.85rem;">
+                        <span style="color:var(--text-muted);">New Total:</span>
+                        <span id="editTotal" style="color:var(--accent);font-weight:700;margin-left:0.5rem;">₦0.00</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveEditLoanBtn">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <main class="top-margin">
 
                 <?php if (isset($_SESSION['success_message'])) : ?>
@@ -354,4 +403,74 @@ $offset = ($page - 1) * $itemsPerPage; // Calculate the offset
 
 
 
+<script>
+// Edit loan — event delegation (table loaded via AJAX into #loanDetails)
+$(document).on('click', '.edit-loan-btn', function () {
+    var btn = $(this);
+    $('#editLoanId').val(btn.data('loanid'));
+    $('#editLoanName').val(btn.data('name'));
+    $('#editLoanStaff').val(btn.data('staff_id'));
+    $('#editAmountGranted').val(parseFloat(btn.data('principal')));
+    $('#editInterest').val(parseFloat(btn.data('interest')));
+    updateEditTotal();
+    var modal = new bootstrap.Modal(document.getElementById('editLoanModal'));
+    modal.show();
+});
+
+function updateEditTotal() {
+    var principal = parseFloat($('#editAmountGranted').val()) || 0;
+    var interest  = parseFloat($('#editInterest').val())  || 0;
+    var total = principal + interest;
+    $('#editTotal').text('₦' + total.toLocaleString('en-NG', { minimumFractionDigits: 2 }));
+}
+
+$('#editAmountGranted').on('input', function () {
+    var principal    = parseFloat($(this).val()) || 0;
+    var interestRate = parseFloat($('#interestRate').val()) || 0;
+    var interest     = principal * interestRate;
+    $('#editInterest').val(interest.toFixed(2));
+    updateEditTotal();
+});
+
+$('#saveEditLoanBtn').on('click', function () {
+    var loanId        = $('#editLoanId').val();
+    var amountGranted = parseFloat($('#editAmountGranted').val());
+    var interest      = parseFloat($('#editInterest').val());
+
+    if (!amountGranted || amountGranted <= 0) {
+        Swal.fire({ icon: 'warning', title: 'Invalid', text: 'Enter a valid loan amount.' });
+        return;
+    }
+
+    var btn = $(this).prop('disabled', true).text('Saving…');
+
+    $.ajax({
+        url: 'updateLoan.php',
+        type: 'POST',
+        data: { loanId: loanId, amountGranted: amountGranted, interest: interest },
+        dataType: 'json',
+        success: function (res) {
+            bootstrap.Modal.getInstance(document.getElementById('editLoanModal')).hide();
+            if (res.status === 'success') {
+                displayAlert('Loan updated successfully', 'center', 'success');
+                var period = $('#period').val();
+                if (period) {
+                    $('#overlay').fadeIn();
+                    $.post('getLoanDetails.php', { periodid: period }, function (html) {
+                        $('#overlay').fadeOut('fast', function () { $('#loanDetails').html(html); });
+                    });
+                }
+            } else {
+                displayAlert(res.message || 'Update failed', 'center', 'error');
+            }
+        },
+        error: function () {
+            displayAlert('Error updating loan', 'center', 'error');
+        },
+        complete: function () {
+            btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Changes');
+        }
+    });
+});
+</script>
 </html>

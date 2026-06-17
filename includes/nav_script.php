@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function openNav() {
         nav.classList.add('show');
-        toggle.classList.add('bx-x');
         if (isMobile()) {
             backdrop && backdrop.classList.add('show');
         } else {
@@ -21,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function closeNav() {
         nav.classList.remove('show');
-        toggle.classList.remove('bx-x');
         backdrop && backdrop.classList.remove('show');
         body   && body.classList.remove('body-pd');
         header && header.classList.remove('body-pd');
@@ -42,23 +40,54 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Re-evaluate on resize (mobile -> desktop transition)
     window.addEventListener('resize', function () {
-        if (!isMobile()) {
-            backdrop && backdrop.classList.remove('show');
-        }
+        if (!isMobile()) backdrop && backdrop.classList.remove('show');
+    });
+
+    // ── Add ripple to buttons ──────────────────────
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const rect = btn.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.cssText = `
+                position:absolute;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;
+                width:${size}px;height:${size}px;border-radius:50%;
+                background:rgba(255,255,255,0.15);transform:scale(0);
+                animation:ripple 0.4s ease-out;pointer-events:none;
+            `;
+            btn.style.position = 'relative';
+            btn.style.overflow = 'hidden';
+            btn.appendChild(ripple);
+            ripple.addEventListener('animationend', () => ripple.remove());
+        });
     });
 });
 
+// Ripple keyframe
+(function() {
+    if (!document.getElementById('ripple-style')) {
+        const s = document.createElement('style');
+        s.id = 'ripple-style';
+        s.textContent = '@keyframes ripple{to{transform:scale(2.5);opacity:0}}';
+        document.head.appendChild(s);
+    }
+})();
+
+// ── SweetAlert2 helper ───────────────────────────
 function displayAlert(title, position, icon) {
     Swal.fire({
-        position: position,
-        icon: icon,
+        position: position || 'center',
+        icon: icon || 'info',
         title: title,
         showConfirmButton: false,
-        timer: 1500,
-        background: '#1E293B',
-        color: '#F8FAFC'
+        timer: 2000,
+        background: '#0D1B30',
+        color: '#F1F5F9',
+        iconColor: icon === 'success' ? '#22C55E' : icon === 'error' ? '#EF4444' : '#F59E0B',
+        customClass: { popup: 'swal-dark' },
+        toast: position === 'top-end',
+        timerProgressBar: true
     });
 }
 </script>

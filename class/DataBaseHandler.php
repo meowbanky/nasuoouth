@@ -156,6 +156,22 @@ class DatabaseHandler
             throw new PDOException("Error inserting master transaction: " . $e->getMessage());
         }
     }
+    public function updateLoan(int $loanId, float $loanAmount, float $interest): bool
+    {
+        try {
+            $this->pdo->beginTransaction();
+            $this->pdo->prepare("UPDATE tbl_loan SET loanamount = ?, interest = ? WHERE loanid = ?")
+                      ->execute([$loanAmount, $interest, $loanId]);
+            $this->pdo->prepare("UPDATE tlb_mastertransaction SET loanAmount = ?, interest = ? WHERE loanID = ?")
+                      ->execute([$loanAmount, $interest, $loanId]);
+            $this->pdo->commit();
+            return true;
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            throw new PDOException("Error updating loan: " . $e->getMessage());
+        }
+    }
+
     public function fetchTransactionDetails($periodFrom, $periodTo, $staffId = ''): array
     {
         // Base query
@@ -411,8 +427,10 @@ class DatabaseHandler
     //Function to get loan details from period
     public function getLoanDetails($periodid): array
     {
-        $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`, (tbl_loan.loanamount + tbl_loan.interest) as loanamount, 
-        tbl_loan.periodid, tbl_loan.staff_id,tbl_loan.loanid FROM tbl_personalinfo INNER JOIN tbl_loan ON tbl_loan.staff_id = tbl_personalinfo.staff_id 
+        $sql = "SELECT CONCAT(tbl_personalinfo.Lname,', ',tbl_personalinfo.Fname,' ',(ifnull(tbl_personalinfo.Mname,' '))) AS `name`,
+        (tbl_loan.loanamount + tbl_loan.interest) as loanamount,
+        tbl_loan.loanamount as loan_principal, tbl_loan.interest as loan_interest,
+        tbl_loan.periodid, tbl_loan.staff_id, tbl_loan.loanid FROM tbl_personalinfo INNER JOIN tbl_loan ON tbl_loan.staff_id = tbl_personalinfo.staff_id
         WHERE tbl_loan.periodid = :periodid";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindParam(':periodid', $periodid, PDO::PARAM_INT);
