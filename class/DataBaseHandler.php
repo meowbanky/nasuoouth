@@ -39,11 +39,7 @@ class DatabaseHandler
         $stmt->execute([$staff_id, $filterValue]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($result) {
-            return $result[$displayColumn]; // Return the actual balance value
-        } else {
-            return 0; // Return 0 if no balance found for the provided staffId
-        }
+        return $result[$displayColumn] ?? 0;
     }
 
     // Function to fetch Balance of Any column
@@ -80,12 +76,7 @@ class DatabaseHandler
                                         FROM tlb_mastertransaction WHERE staff_id = ?");
         $stmt->execute([$staff_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($result) {
-            return $result['balance'];
-        } else {
-            return '0'; // No balance found for the provided staffId
-        }
+        return $result['balance'] ?? 0;
     }
 
     public function getLoanStatus($staff_id): string|float|int
@@ -93,12 +84,7 @@ class DatabaseHandler
         $stmt = $this->pdo->prepare("SELECT (sum(ifnull(loanAmount,0))+sum(ifnull(interest,0))) - sum(ifnull(loanRepayment,0)) balance FROM tlb_mastertransaction WHERE staff_id  = ?");
         $stmt->execute([$staff_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($result) {
-            return $result['balance'];
-        } else {
-            return '0'; // No balance found for the provided staffId
-        }
+        return $result['balance'] ?? 0;
     }
     // Function to fetch single Item
     public function getSingleItem(string $tableName, string $returnColumn, string $filter, $filterValue): string|int|float
@@ -405,7 +391,7 @@ class DatabaseHandler
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         $result = $stmt->fetch();
-        return $result['column'];
+        return $result['column'] ?? null;
     }
 
     public function getLimitedOrderedItem(string $table, string $orderBy, string $order, int $limit, int $offset): array
