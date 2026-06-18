@@ -52,7 +52,7 @@ function fetchTransactions($conn, $periodFrom, $periodTo, $id = '')
     $queryParams[] = $id;
   }
 
-  $query .= " GROUP BY tlb_mastertransaction.periodid, tbl_personalinfo.staff_id order by tbl_personalinfo.staff_id";
+  $query .= " GROUP BY tlb_mastertransaction.periodid, tbl_personalinfo.staff_id ORDER BY tbl_personalinfo.staff_id, tlb_mastertransaction.periodid";
 
   try {
       $stmt = $conn->prepare($query);
@@ -101,6 +101,7 @@ if (empty($transactionDetails)) {
     $totalContribution = 0;
     $totalLoans = 0;
     $totalLoanRepayment = 0;
+    $totalRefund = 0;
     $GrandTotal = 0;
 
     echo "<form method='GET' id='masterDetailsForm' name='masterDetailsForm'>";
@@ -140,6 +141,7 @@ if (empty($transactionDetails)) {
         $totalContribution += $detail['Contribution'];
         $totalLoans += $detail['loan'];
         $totalLoanRepayment += $detail['loanrepayments'];
+        $totalRefund += $detail['refund'];
         $GrandTotal += $detail['total'];
     }
     echo "<tfoot>
@@ -147,8 +149,10 @@ if (empty($transactionDetails)) {
                     <th scope='row' colspan='4' class='text-right'>Total</th>
                     <th scope='row' class='text-right'>₦" . number_format($totalContribution) . "</th>
                     <th scope='row' class='text-right'>₦" . number_format($totalLoans) . "</th>
-                     <th scope='row' class='text-right'>₦" . number_format($totalLoanRepayment) . "</th>
-                      <th scope='row' class='text-right'>₦" . number_format($GrandTotal) . "</th>
+                    <th scope='row' class='text-right'>₦" . number_format($totalLoanRepayment) . "</th>
+                    <th scope='row' class='text-right'>—</th>
+                    <th scope='row' class='text-right'>₦" . number_format($totalRefund) . "</th>
+                    <th scope='row' class='text-right'>₦" . number_format($GrandTotal) . "</th>
                 </tr>
             </tfoot>";
     echo "</table>";

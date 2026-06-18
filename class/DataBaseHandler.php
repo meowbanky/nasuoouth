@@ -108,9 +108,9 @@ class DatabaseHandler
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($result) {
-            return $result[$returnColumn];
+            return $result[$returnColumn] ?? '';
         } else {
-            return '0'; // No balance found for the provided staffId
+            return '';
         }
     }
 
@@ -158,18 +158,11 @@ class DatabaseHandler
     }
     public function updateLoan(int $loanId, float $loanAmount, float $interest): bool
     {
-        try {
-            $this->pdo->beginTransaction();
-            $this->pdo->prepare("UPDATE tbl_loan SET loanamount = ?, interest = ? WHERE loanid = ?")
-                      ->execute([$loanAmount, $interest, $loanId]);
-            $this->pdo->prepare("UPDATE tlb_mastertransaction SET loanAmount = ?, interest = ? WHERE loanID = ?")
-                      ->execute([$loanAmount, $interest, $loanId]);
-            $this->pdo->commit();
-            return true;
-        } catch (PDOException $e) {
-            $this->pdo->rollBack();
-            throw new PDOException("Error updating loan: " . $e->getMessage());
-        }
+        $this->pdo->prepare("UPDATE tbl_loan SET loanamount = ?, interest = ? WHERE loanid = ?")
+                  ->execute([$loanAmount, $interest, $loanId]);
+        $this->pdo->prepare("UPDATE tlb_mastertransaction SET loanAmount = ?, interest = ? WHERE loanid = ?")
+                  ->execute([$loanAmount, $interest, $loanId]);
+        return true;
     }
 
     public function fetchTransactionDetails($periodFrom, $periodTo, $staffId = ''): array
