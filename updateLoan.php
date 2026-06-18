@@ -22,6 +22,6 @@ try {
     $dbHandler = new DataBaseHandler();
     $dbHandler->updateLoan($loanId, $amountGranted, $interest);
     echo json_encode(['status' => 'success', 'message' => 'Loan updated successfully.']);
-} catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => 'Failed to update loan.']);
+} catch (Throwable $e) {
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
